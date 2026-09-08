@@ -1,0 +1,48 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!--
+      The same 270-degree arc the dashboard uses for the charge ring, so the icon and the
+      app read as one object. Outer radius stays inside the 72dp adaptive-icon safe zone,
+      which is what keeps it from being clipped by a circular launcher mask.
+    -->
+    <path
+        android:pathData="M37.03,70.97 A24,24 0 1 1 70.97,70.97"
+        android:strokeWidth="5.5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000">
+        <aapt:attr xmlns:aapt="http://schemas.android.com/aapt" name="android:strokeColor">
+            <gradient
+                android:type="linear"
+                android:startX="30" android:startY="76"
+                android:endX="78" android:endY="30">
+                <item android:offset="0.0" android:color="#FF0E7490" />
+                <item android:offset="0.5" android:color="#FF22D3EE" />
+                <item android:offset="1.0" android:color="#FF67E8F9" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Bolt, centred inside the ring. -->
+    <group
+        android:scaleX="1.16"
+        android:scaleY="1.16"
+        android:translateX="40.08"
+        android:translateY="40.08">
+        <path android:pathData="M13.5,2 L4.5,13.2 C4.1,13.7 4.5,14.5 5.2,14.5 L10.2,14.5 L9.4,21.4 C9.3,22.2 10.3,22.6 10.8,22 L19.8,10.8 C20.2,10.3 19.8,9.5 19.1,9.5 L14.1,9.5 L14.9,2.6 C15,1.8 14,1.4 13.5,2 Z">
+            <aapt:attr xmlns:aapt="http://schemas.android.com/aapt" name="android:fillColor">
+                <gradient
+                    android:type="linear"
+                    android:startX="4" android:startY="2"
+                    android:endX="20" android:endY="22">
+                    <item android:offset="0.0" android:color="#FFFFFFFF" />
+                    <item android:offset="0.55" android:color="#FFA5F3FC" />
+                    <item android:offset="1.0" android:color="#FF22D3EE" />
+                </gradient>
+            </aapt:attr>
+        </path>
+    </group>
+</vector>
