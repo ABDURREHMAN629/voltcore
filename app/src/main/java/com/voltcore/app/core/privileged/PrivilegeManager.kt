@@ -1,7 +1,9 @@
 package com.voltcore.app.core.privileged
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
 import android.text.TextUtils
@@ -17,6 +19,8 @@ data class PrivilegeState(
     val shizukuPermission: Boolean = false,
     val shizukuPermanentlyDenied: Boolean = false,
     val accessibilityEnabled: Boolean = false,
+    /** WRITE_SECURE_SETTINGS granted once over USB: Battery Saver works without Shizuku. */
+    val secureSettings: Boolean = false,
 ) {
     /** True when freezing can be done silently, without hijacking the screen. */
     val canFreezeSilently: Boolean get() = tier.rank >= PrivilegeTier.SHIZUKU.rank
@@ -46,6 +50,7 @@ class PrivilegeManager(private val context: Context) {
         val running = shizuku.isServiceRunning()
         val permitted = running && shizuku.hasPermission()
         val accessibility = isAccessibilityEnabled()
+        val secure = canWriteSecureSettings()
 
         val tier = when {
             permitted -> PrivilegeTier.SHIZUKU
@@ -60,6 +65,7 @@ class PrivilegeManager(private val context: Context) {
             shizukuPermission = permitted,
             shizukuPermanentlyDenied = running && !permitted && shizuku.isPermanentlyDenied(),
             accessibilityEnabled = accessibility,
+            secureSettings = secure,
         )
         _state.value = next
         return next
@@ -134,7 +140,27 @@ class PrivilegeManager(private val context: Context) {
         return failures
     }
 
+    /**
+     * Writes a Settings.Global value — Shizuku if it is connected, otherwise directly when
+     * WRITE_SECURE_SETTINGS has been granted over USB. That permission carries the
+     * `development` flag, so unlike pausing or disabling apps it needs no helper app.
+     */
+    suspend fun putGlobalSetting(key: String, value: String): PrivilegeResult {
+        activeBackend()?.let { return it.putGlobalSetting(key, value) }
+        if (!canWriteSecureSettings()) {
+            return PrivilegeResult.Unsupported("Needs the one-time USB permission.")
+        }
+        val written = runCatching {
+            Settings.Global.putString(context.contentResolver, key, value)
+        }.getOrDefault(false)
+        return if (written) PrivilegeResult.Success else PrivilegeResult.Failed("Android refused.")
+    }
+
     // ------------------------------------------------------------------ detection
+
+    fun canWriteSecureSettings(): Boolean =
+        context.checkSelfPermission(Manifest.permission.WRITE_SECURE_SETTINGS) ==
+            PackageManager.PERMISSION_GRANTED
 
     fun isShizukuInstalled(): Boolean = runCatching {
         context.packageManager.getPackageInfo(SHIZUKU_PACKAGE, 0)

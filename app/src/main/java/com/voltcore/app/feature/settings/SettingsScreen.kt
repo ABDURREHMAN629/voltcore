@@ -1,5 +1,7 @@
 package com.voltcore.app.feature.settings
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.provider.Settings
 import androidx.compose.foundation.background
@@ -31,16 +33,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.voltcore.app.BuildConfig
+import com.voltcore.app.R
 import com.voltcore.app.core.AppGraph
 import com.voltcore.app.core.battery.CalibrationMode
 import com.voltcore.app.core.battery.DiagnosticEntry
 import com.voltcore.app.core.battery.TelemetryDiagnostics
 import com.voltcore.app.core.data.VoltSettings
 import com.voltcore.app.service.MonitorService
+import com.voltcore.app.ui.components.ArMonogram
 import com.voltcore.app.ui.components.GlassCard
 import com.voltcore.app.ui.components.SectionLabel
 import com.voltcore.app.ui.theme.VoltText
@@ -172,7 +177,7 @@ fun SettingsRoute(graph: AppGraph) {
                 SettingSwitch(
                     "Freeze when the screen is off",
                     "Stops your selected apps after the phone has been idle a while. " +
-                        "Needs Shizuku and at least one app chosen in the Apps tab.",
+                        "Needs Shizuku (optional app) and an app chosen in the Apps tab.",
                     settings.freezeOnScreenOff,
                 ) { on -> scope.launch { prefs.setFreezeOnScreenOff(on) } }
                 if (settings.freezeOnScreenOff) {
@@ -248,10 +253,18 @@ fun SettingsRoute(graph: AppGraph) {
                 SectionLabel("Permissions and access")
                 Spacer(Modifier.height(4.dp))
                 ActionRow(
-                    "Shizuku",
-                    "Grants VoltCore shell-level access so it can pause apps. " +
-                        "Not root — it uses Android's own Wireless debugging and does " +
-                        "not affect banking apps or Play Integrity.",
+                    "Battery Saver without Shizuku",
+                    "Lets Boost turn on Battery Saver. Run once from a computer (tap to " +
+                        "copy): $SECURE_SETTINGS_GRANT",
+                ) {
+                    context.getSystemService(ClipboardManager::class.java)
+                        ?.setPrimaryClip(ClipData.newPlainText("adb command", SECURE_SETTINGS_GRANT))
+                }
+                ActionRow(
+                    "Shizuku (optional)",
+                    "Not needed for anything except Pause, Disable and restricting " +
+                        "background work — Android keeps those for system tools. Everything " +
+                        "else in VoltCore works without it.",
                 ) { graph.privilege.openShizuku() }
                 ActionRow(
                     "Usage access",
@@ -372,12 +385,25 @@ fun SettingsRoute(graph: AppGraph) {
         item {
             GlassCard {
                 SectionLabel("About")
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    "VoltCore ${BuildConfig.VERSION_NAME}",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    ArMonogram(size = 44.dp)
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            "Version ${BuildConfig.VERSION_NAME}  ·  by AR",
+                            style = VoltText.caption,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
                 Text(
                     "Readings come from the Android battery API and, where the kernel " +
                         "allows it, directly from /sys/class/power_supply — which is how " +
@@ -604,3 +630,6 @@ private fun describeCalibration(settings: VoltSettings): String {
     val sign = if (c.signFlipped) ", sign inverted" else ""
     return "$units$sign"
 }
+
+private const val SECURE_SETTINGS_GRANT =
+    "adb shell pm grant com.voltcore.app android.permission.WRITE_SECURE_SETTINGS"

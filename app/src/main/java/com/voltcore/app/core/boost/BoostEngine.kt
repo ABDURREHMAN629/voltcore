@@ -151,12 +151,14 @@ class BoostEngine(
                 )
 
                 else -> {
+                    // Without Shizuku only force stop exists, whatever the stored choice.
+                    val method = if (backend != null) settings.freezeMethod else FreezeMethod.FORCE_STOP
                     var frozen = 0
                     for (pkg in targets) {
-                        val result = privilege.freeze(pkg, settings.freezeMethod)
+                        val result = privilege.freeze(pkg, method)
                         if (result is PrivilegeResult.Success) {
                             frozen++
-                            if (settings.freezeMethod != FreezeMethod.FORCE_STOP) {
+                            if (method != FreezeMethod.FORCE_STOP) {
                                 suspendedByBoost += pkg
                             }
                         }
@@ -167,7 +169,7 @@ class BoostEngine(
                         "$frozen of ${targets.size} stopped",
                         applied = frozen > 0,
                         skippedReason = if (frozen == 0) {
-                            "Set up Shizuku to let VoltCore stop apps."
+                            "Turn on the force-stop helper in the Apps tab."
                         } else {
                             null
                         },
@@ -202,12 +204,16 @@ class BoostEngine(
         // 3. Battery saver, if the user opted in. Off by default because it also throttles
         //    the foreground, which people notice and blame on the phone.
         if (settings.boostEnablesBatterySaver) {
-            val result = backend?.putGlobalSetting("low_power", "1")
+            val result = privilege.putGlobalSetting("low_power", "1")
             actions += BoostAction(
                 "Turn on Battery Saver",
                 if (result is PrivilegeResult.Success) "Enabled" else "Could not change it",
                 applied = result is PrivilegeResult.Success,
-                skippedReason = if (result !is PrivilegeResult.Success) "Requires Shizuku." else null,
+                skippedReason = if (result !is PrivilegeResult.Success) {
+                    "Needs the one-time USB permission in Settings."
+                } else {
+                    null
+                },
             )
         }
 

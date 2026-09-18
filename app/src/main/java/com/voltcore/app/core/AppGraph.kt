@@ -6,9 +6,12 @@ import com.voltcore.app.core.battery.SysfsProbe
 import com.voltcore.app.core.alerts.AlertManager
 import com.voltcore.app.core.boost.BoostEngine
 import com.voltcore.app.core.data.AppUsageRepository
+import com.voltcore.app.core.data.BatteryLogRepository
 import com.voltcore.app.core.data.HistoryRepository
 import com.voltcore.app.core.data.InstalledAppsRepository
+import com.voltcore.app.core.data.ScreenTimeRepository
 import com.voltcore.app.core.data.VoltPrefs
+import com.voltcore.app.core.privileged.LocalDumpsys
 import com.voltcore.app.core.privileged.PrivilegeManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -77,7 +80,14 @@ class AppGraph(context: Context) {
 
     val history: HistoryRepository by lazy { HistoryRepository(appContext) }
 
-    val appUsage: AppUsageRepository by lazy { AppUsageRepository(appContext, privilege) }
+    /** Runs dumpsys in-process once `DUMP` has been granted over USB; no Shizuku needed. */
+    val dumpsys: LocalDumpsys by lazy { LocalDumpsys(appContext) }
+
+    val appUsage: AppUsageRepository by lazy { AppUsageRepository(appContext, privilege, dumpsys) }
+
+    val batteryLog: BatteryLogRepository by lazy { BatteryLogRepository(appContext, dumpsys) }
+
+    val screenTime: ScreenTimeRepository by lazy { ScreenTimeRepository(appContext) }
 
     val boost: BoostEngine by lazy { BoostEngine(telemetry, privilege, prefs) }
 

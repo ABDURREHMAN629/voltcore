@@ -26,7 +26,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -39,6 +39,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.voltcore.app.core.AppGraph
 import com.voltcore.app.core.data.AppPowerUse
@@ -56,6 +58,8 @@ import com.voltcore.app.ui.components.LineChart
 import com.voltcore.app.ui.components.SectionLabel
 import com.voltcore.app.ui.theme.VoltText
 import com.voltcore.app.ui.theme.VoltTheme
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @Composable
 fun HistoryRoute(graph: AppGraph) {
@@ -68,16 +72,22 @@ fun HistoryRoute(graph: AppGraph) {
     var usage by remember { mutableStateOf<UsageReport?>(null) }
     var showSystem by rememberSaveable { mutableStateOf(true) }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val daily = remember { DailyUsageState(graph, scope) }
 
-    // Reading batterystats over Shizuku is a shell round trip, so this loads once rather
-    // than following the sample stream.
-    LaunchedEffect(Unit) {
-        usage = graph.appUsage.report(System.currentTimeMillis() - USAGE_WINDOW_MS)
+    // On every return to the screen, not just the first: coming back from the Usage access
+    // settings page should show the newly available screen time without a restart.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        scope.launch { daily.load() }
+        // Reading batterystats is a process round trip, so it follows resumes rather than
+        // the live sample stream.
+        scope.launch { usage = graph.appUsage.report(System.currentTimeMillis() - USAGE_WINDOW_MS) }
     }
 
     HistoryScreen(
         samples = samples,
         sessions = sessions,
+        daily = daily,
         usage = usage,
         showSystem = showSystem,
         onToggleSystem = { showSystem = it },
@@ -89,7 +99,6 @@ fun HistoryRoute(graph: AppGraph) {
                 )
             }
         },
-        onSetupShizuku = { graph.privilege.openShizuku() },
     )
 }
 
@@ -97,11 +106,11 @@ fun HistoryRoute(graph: AppGraph) {
 private fun HistoryScreen(
     samples: List<SampleEntity>,
     sessions: List<SessionEntity>,
+    daily: DailyUsageState,
     usage: UsageReport?,
     showSystem: Boolean,
     onToggleSystem: (Boolean) -> Unit,
     onGrantUsageAccess: () -> Unit,
-    onSetupShizuku: () -> Unit,
 ) {
     val colors = VoltTheme.colors
 
@@ -122,11 +131,13 @@ private fun HistoryScreen(
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Text(
-                "The last ${WINDOW_MS / 3_600_000} hours, recorded while the monitor was running.",
+                "Battery use by day and by hour, what used it, and your charging sessions.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+
+        item { DailyUsageSection(daily, onGrantUsageAccess) }
 
         item {
             BatteryUsageCard(
@@ -134,8 +145,12 @@ private fun HistoryScreen(
                 showSystem = showSystem,
                 onToggleSystem = onToggleSystem,
                 onGrantUsageAccess = onGrantUsageAccess,
-                onSetupShizuku = onSetupShizuku,
             )
+        }
+
+        item {
+            Spacer(Modifier.height(2.dp))
+            SectionLabel("Last ${WINDOW_MS / 3_600_000} hours, from the live monitor")
         }
 
         // Each measure gets its own plot. They share a time axis but not a scale, and
@@ -293,7 +308,6 @@ private fun BatteryUsageCard(
     showSystem: Boolean,
     onToggleSystem: (Boolean) -> Unit,
     onGrantUsageAccess: () -> Unit,
-    onSetupShizuku: () -> Unit,
 ) {
     val colors = VoltTheme.colors
 
@@ -309,7 +323,10 @@ private fun BatteryUsageCard(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             when (report?.source) {
-                UsageSource.BATTERY_STATS -> Badge("Measured", colors.good)
+                // Not "Measured": this phone has no charge counter, so Android models these
+                // figures rather than metering them. Green would also borrow the status
+                // palette's "good", which this is not a claim of.
+                UsageSource.BATTERY_STATS -> Badge("Android estimate", colors.normal)
                 UsageSource.USAGE_STATS -> Badge("Screen time", colors.warn)
                 else -> Unit
             }
@@ -318,43 +335,52 @@ private fun BatteryUsageCard(
         when (report?.source) {
             UsageSource.BATTERY_STATS -> {
                 Text(
-                    "Android's own power accounting since the last full charge, in mAh. " +
-                        "Includes system components.",
+                    "Android's own estimate for the current battery period, in mAh, " +
+                        "with how much of each app's use happened off screen.",
                     style = VoltText.caption,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                // Say how much of the drain the list actually explains. On phones whose
+                // power model leaves out the processor, apps can account for a small
+                // fraction of the total, and a list with no caveat reads as complete.
+                val coverage = report.coverage
+                val drain = report.drainMah
+                if (coverage != null && drain != null && coverage < COVERAGE_NOTE_BELOW) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "These rows explain ${(coverage * 100).roundToInt()}% of the " +
+                            "${drain.roundToInt()} mAh used this period. Android cannot " +
+                            "pin the rest on any app here: this phone does not report " +
+                            "processor speeds per app, and its power profile rates the " +
+                            "screen far below what screens really draw.",
+                        style = VoltText.caption,
+                        color = colors.warn,
+                    )
+                }
             }
 
             UsageSource.USAGE_STATS -> {
                 Text(
-                    "This is screen time, not drain — VoltCore cannot read the real " +
-                        "per-app figures without Shizuku. An app that syncs in the " +
-                        "background can cost a lot and still show zero here.",
+                    "This is screen time, not drain. Android's per-app battery figures " +
+                        "need the one-time USB permission shown under \"Fill in more " +
+                        "history\" above. Until then, an app that syncs in the background " +
+                        "can cost a lot and still show zero here.",
                     style = VoltText.caption,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(Modifier.height(6.dp))
-                TextButton(onClick = onSetupShizuku, contentPadding = PaddingValues(0.dp)) {
-                    Text("Set up Shizuku for real figures", color = colors.warn)
-                }
             }
 
             else -> {
                 Text(
-                    "No usage data yet. Grant usage access for screen time, or set up " +
-                        "Shizuku to read Android's real per-app battery accounting — " +
-                        "neither needs root.",
+                    "No usage data yet. Allow Usage access for screen time, or make the " +
+                        "one-time USB grant above for Android's per-app battery estimate — " +
+                        "neither needs root or another app.",
                     style = VoltText.caption,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = onGrantUsageAccess, contentPadding = PaddingValues(0.dp)) {
-                        Text("Usage access", color = MaterialTheme.colorScheme.primary)
-                    }
-                    TextButton(onClick = onSetupShizuku, contentPadding = PaddingValues(0.dp)) {
-                        Text("Shizuku", color = MaterialTheme.colorScheme.primary)
-                    }
+                TextButton(onClick = onGrantUsageAccess, contentPadding = PaddingValues(0.dp)) {
+                    Text("Usage access", color = MaterialTheme.colorScheme.primary)
                 }
             }
         }
@@ -425,10 +451,25 @@ private fun UsageRow(entry: AppPowerUse, peak: Double) {
                     modifier = Modifier.weight(1f, fill = false),
                 )
                 Spacer(Modifier.width(8.dp))
+                // Values wear text colour; the bar beside them carries the identity.
                 Text(
                     entry.displayValue(),
                     style = VoltText.readoutSmall,
-                    color = accent,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            // The off-screen share is the actionable part: an app that burns most of its
+            // battery while you are not looking at it is the one worth freezing.
+            entry.offScreenShare?.let { share ->
+                val pct = (share * 100).roundToInt()
+                Text(
+                    "$pct% off screen",
+                    style = VoltText.caption,
+                    color = if (share >= HEAVY_OFF_SCREEN) {
+                        colors.warn
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                 )
             }
             Spacer(Modifier.height(4.dp))
@@ -464,3 +505,9 @@ private fun AppPowerUse.displayValue(): String {
 private const val WINDOW_MS = 6L * 60 * 60 * 1000
 private const val USAGE_WINDOW_MS = 24L * 60 * 60 * 1000
 private const val MAX_USAGE_ROWS = 12
+
+/** Below this share of the drain explained, the card says what it cannot see. */
+private const val COVERAGE_NOTE_BELOW = 0.9
+
+/** Off-screen share at which an app is flagged as a background drainer. */
+private const val HEAVY_OFF_SCREEN = 0.5

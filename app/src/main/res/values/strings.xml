@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">VoltCore</string>
-    <string name="widget_label">VoltCore Battery</string>
+    <string name="app_name">AR VoltCore</string>
+    <string name="widget_label">AR VoltCore</string>
     <string name="tile_boost">Boost Charge</string>
 
-    <string name="accessibility_service_label">VoltCore Force Stop</string>
+    <string name="accessibility_service_label">AR VoltCore Force Stop</string>
     <string name="accessibility_service_description">Used only when Shizuku is unavailable. VoltCore drives the Force stop button on the system App info screen for the apps you explicitly choose to freeze. It reads no other screen content and sends nothing off the device.</string>
 
     <string name="channel_monitor_name">Live charging monitor</string>

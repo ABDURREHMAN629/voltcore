@@ -33,6 +33,25 @@
     <uses-permission android:name="android.permission.BATTERY_STATS"
         tools:ignore="ProtectedPermissions" />
 
+    <!--
+      Lets VoltCore read Android's battery history and per-app estimates itself, with no
+      helper app. Signature-level, but it carries the `development` flag, so it can be
+      granted to this app once over USB. The battery service also demands the
+      PACKAGE_USAGE_STATS permission itself (declared below), granted the same way:
+        adb shell pm grant com.voltcore.app android.permission.DUMP
+        adb shell pm grant com.voltcore.app android.permission.PACKAGE_USAGE_STATS
+      It must be declared here or `pm grant` refuses.
+    -->
+    <uses-permission android:name="android.permission.DUMP"
+        tools:ignore="ProtectedPermissions" />
+
+    <!--
+      Lets Boost turn Battery Saver on without Shizuku. Also `development`-grantable:
+        adb shell pm grant com.voltcore.app android.permission.WRITE_SECURE_SETTINGS
+    -->
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
+
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />

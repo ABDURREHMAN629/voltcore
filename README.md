@@ -1,4 +1,4 @@
-# VoltCore
+# AR VoltCore
 
 A battery and charging monitor for Android that shows what your charger is *actually*
 delivering — amps, volts, watts, temperature, and the negotiated USB PD / Quick Charge
@@ -59,7 +59,33 @@ default, hence `android.disallowKotlinSourceSets=false` in `gradle.properties`.
 
 ---
 
-## Setting up Shizuku (optional, but it unlocks the good parts)
+## Setup without Shizuku (recommended)
+
+Everything except pausing and disabling apps works with AR VoltCore alone. Some data needs
+permissions Android only hands out over USB. They are **not root** and install nothing
+else on the phone. They stay granted after a reboot and are removed if you uninstall the app.
+
+With USB debugging on and the phone plugged into a computer, run these once:
+
+```bash
+adb shell pm grant com.voltcore.app android.permission.DUMP
+adb shell pm grant com.voltcore.app android.permission.PACKAGE_USAGE_STATS
+adb shell pm grant com.voltcore.app android.permission.WRITE_SECURE_SETTINGS
+```
+
+| Grant | Unlocks |
+|---|---|
+| `DUMP` + `PACKAGE_USAGE_STATS` | The daily and hourly battery history, including the ~2 weeks Android kept before install, and per-app battery estimates. The battery service needs **both** grants. The Usage access switch in Settings does not count as the second one. |
+| `WRITE_SECURE_SETTINGS` | Boost turning Battery Saver on |
+
+To force-stop apps, turn on **AR VoltCore** under Settings → Accessibility. If Android calls
+it a *restricted setting*, open App info → ⋮ → **Allow restricted settings** first.
+
+Android keeps **Pause**, **Disable** and **Restrict App Standby bucket** for system apps
+(`SUSPEND_APPS`, `CHANGE_COMPONENT_ENABLED_STATE` and `CHANGE_APP_IDLE_STATE` cannot be
+granted over USB), so those three alone need Shizuku.
+
+## Setting up Shizuku (optional: only for Pause / Disable)
 
 Android deliberately gives no app the ability to stop another app —
 `killBackgroundProcesses()` has been a no-op for other packages since Android 8. So app
@@ -95,17 +121,19 @@ root or device-owner enrolment.
 
 ## What works at each level of access
 
-| Capability | No setup | Accessibility | Shizuku |
+| Capability | No setup | USB grants + Accessibility | Shizuku |
 |---|---|---|---|
 | Live current / voltage / watts / temperature | ✅ | ✅ | ✅ |
 | Charger voltage + USB PD / QC detection | ✅ * | ✅ * | ✅ * |
 | Charging history and session logging | ✅ | ✅ | ✅ |
+| Battery by day / hour, logged from install | ✅ | ✅ | ✅ |
+| Android's older history + per-app estimates | ❌ | ✅ | ✅ |
 | Alerts (full, charge limit, overheat, low) | ✅ | ✅ | ✅ |
 | Force stop an app | Manual only | ✅ (slow) | ✅ |
 | **Pause** an app so it stays stopped | ❌ | ❌ | ✅ |
 | Disable an app | ❌ | ❌ | ✅ |
 | Restrict App Standby bucket | ❌ | ❌ | ✅ |
-| Toggle Battery Saver from Boost | ❌ | ❌ | ✅ |
+| Toggle Battery Saver from Boost | ❌ | ✅ | ✅ |
 
 \* Depends on the kernel exposing `/sys/class/power_supply`. Where it is unavailable
 VoltCore shows a dash rather than inventing a number.
@@ -121,11 +149,10 @@ VoltCore shows a dash rather than inventing a number.
 
 Two sources, and the app labels which one it used, because they measure different things:
 
-- **With Shizuku — "Measured":** VoltCore reads Android's own per-UID power accounting out
-  of `dumpsys batterystats` and reports real **mAh per app**, system components included.
-  That data needs the signature-level `BATTERY_STATS` permission, which no normal app can
-  ever hold — but shell can, which is what Shizuku lends it.
-- **Without Shizuku — "Screen time":** UsageStats foreground time, computed from the raw
+- **"Android estimate":** VoltCore runs `dumpsys batterystats --usage` in its own process
+  (DUMP + PACKAGE_USAGE_STATS granted over USB, or through Shizuku) and reports Android's
+  **mAh per app**, system components included.
+- **Without those grants — "Screen time":** UsageStats foreground time, computed from the raw
   event stream so it can be scoped to an arbitrary window. It is an honest proxy and
   clearly labelled as one: a sync adapter with no UI can drain the battery hard and still
   score zero here.
@@ -219,7 +246,9 @@ status is rendered with its text label, so colour is never the only channel.
 | `FOREGROUND_SERVICE_SPECIAL_USE` | One-second sampling; a deferrable worker would coalesce readings into uselessness |
 | `POST_NOTIFICATIONS` | The live readout and every alert |
 | `QUERY_ALL_PACKAGES` | Listing apps you can choose to freeze |
-| `PACKAGE_USAGE_STATS` | Sorting that list by what you actually use (optional) |
+| `PACKAGE_USAGE_STATS` | Screen time per hour; with DUMP, reading battery history (granted over USB) |
+| `DUMP` | Android's battery history and per-app estimates (granted over USB) |
+| `WRITE_SECURE_SETTINGS` | Boost turning Battery Saver on (granted over USB) |
 | `moe.shizuku.manager.permission.API_V23` | Talking to Shizuku, if you set it up |
 | `WRITE_SETTINGS` | Boost toggling system settings (optional) |
 

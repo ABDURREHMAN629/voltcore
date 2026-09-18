@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import com.voltcore.app.core.AppGraph
 import com.voltcore.app.core.battery.TelemetryDiagnostics
+import com.voltcore.app.service.LevelLogWorker
 
 class VoltCoreApp : Application() {
 
@@ -15,6 +16,10 @@ class VoltCoreApp : Application() {
         super.onCreate()
         graph = AppGraph(this)
         createNotificationChannels()
+
+        // The day and hour views need a reading every 15 minutes whether or not the app is
+        // open. WorkManager keeps the schedule across reboots on its own.
+        LevelLogWorker.schedule(this)
 
         // One-shot dump of which battery sources this device actually permits. Availability
         // varies enormously between OEMs and is otherwise invisible to diagnose.

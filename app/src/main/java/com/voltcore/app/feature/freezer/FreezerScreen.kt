@@ -41,11 +41,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.voltcore.app.core.AppGraph
 import com.voltcore.app.core.data.InstalledApp
+import com.voltcore.app.core.privileged.ForceStopAccessibilityService
 import com.voltcore.app.core.privileged.FreezeMethod
 import com.voltcore.app.core.privileged.PrivilegeState
 import com.voltcore.app.ui.components.AppIcon
@@ -64,6 +68,7 @@ fun FreezerRoute(graph: AppGraph) {
     val state = remember { FreezerState(graph, scope) }
 
     LaunchedEffect(Unit) { state.refresh() }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { scope.launch { state.refreshPrivilege() } }
 
     FreezerScreen(
         state = state,
@@ -85,6 +90,7 @@ private fun FreezerScreen(
     onSetupShizuku: () -> Unit,
 ) {
     val colors = VoltTheme.colors
+    val context = LocalContext.current
     val visible = state.visibleApps()
 
     Box(
@@ -116,7 +122,11 @@ private fun FreezerScreen(
                 Spacer(Modifier.height(6.dp))
             }
 
-            item { PrivilegeCard(state.privilege, onSetupShizuku) }
+            item {
+                PrivilegeCard(state.privilege, onSetupShizuku) {
+                    ForceStopAccessibilityService.openSettings(context)
+                }
+            }
 
             item { MethodPicker(state.method, state.privilege, onMethodChange) }
 
@@ -199,8 +209,14 @@ private fun FreezerScreen(
 // ------------------------------------------------------------------------- privilege
 
 @Composable
-private fun PrivilegeCard(state: PrivilegeState, onSetup: () -> Unit) {
+private fun PrivilegeCard(
+    state: PrivilegeState,
+    onSetupShizuku: () -> Unit,
+    onOpenAccessibility: () -> Unit,
+) {
     val colors = VoltTheme.colors
+    // Only the Shizuku rows below lead to Shizuku; everything else is the helper-free path.
+    val onSetup = if (state.shizukuRunning) onSetupShizuku else onOpenAccessibility
     val (accent, title, body, action) = when {
         state.shizukuPermission -> Quad(
             colors.good,
@@ -217,29 +233,25 @@ private fun PrivilegeCard(state: PrivilegeState, onSetup: () -> Unit) {
             "Grant permission",
         )
 
-        state.shizukuInstalled -> Quad(
-            colors.warn,
-            "Start Shizuku",
-            "Shizuku is installed but not running. Open it and start the service using " +
-                "Wireless debugging — this does not root your phone.",
-            "Open Shizuku",
-        )
-
+        // Without Shizuku, force stop through the accessibility helper is the whole story:
+        // Android keeps pausing and disabling other apps for system tools and the shell.
         state.accessibilityEnabled -> Quad(
-            colors.warn,
-            "Limited mode",
-            "Without Shizuku, VoltCore can only force stop apps by driving the Settings " +
-                "screen. It is slow and apps can restart themselves.",
-            "Set up Shizuku",
+            colors.good,
+            "Force stop ready — no Shizuku needed",
+            "VoltCore stops your chosen apps by pressing Force stop in Settings for you, so " +
+                "the screen flicks through them for a moment. Apps can start again when " +
+                "something wakes them. Pause and Disable need Shizuku, which is optional.",
+            null,
         )
 
         else -> Quad(
-            colors.danger,
-            "Setup needed",
-            "Android gives no app the right to stop another app. Shizuku grants that " +
-                "safely over Wireless debugging — no root, no unlocked bootloader, and " +
-                "nothing that trips banking apps.",
-            "Set up Shizuku",
+            colors.warn,
+            "Turn on the force-stop helper",
+            "Android does not let one app stop another. Turn on AR VoltCore in " +
+                "Accessibility and it presses Force stop for you — no other app needed. " +
+                "If Android says the setting is restricted, open AR VoltCore's App info, tap " +
+                "⋮ → Allow restricted settings, and try again.",
+            "Open Accessibility settings",
         )
     }
 
@@ -338,7 +350,7 @@ private fun MethodRow(
                 },
             )
             Text(
-                if (enabled) method.description else "Needs Shizuku",
+                if (enabled) method.description else "Needs Shizuku (optional app)",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

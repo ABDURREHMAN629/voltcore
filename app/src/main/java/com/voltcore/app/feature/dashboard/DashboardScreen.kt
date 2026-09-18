@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.systemBars
@@ -38,6 +39,7 @@ import com.voltcore.app.core.model.ChargeProtocol
 import com.voltcore.app.core.model.ChargeSpeed
 import com.voltcore.app.core.model.ChargeStatus
 import com.voltcore.app.core.util.Fmt
+import com.voltcore.app.ui.components.ArMonogram
 import com.voltcore.app.ui.components.Badge
 import com.voltcore.app.ui.components.ChargeRing
 import com.voltcore.app.ui.components.DetailRow
@@ -108,18 +110,24 @@ private fun Header(snapshot: BatterySnapshot, accent: Color) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column {
-            Text(
-                "VoltCore",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Text(
-                statusLine(snapshot),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // The monogram carries the "AR" of the app's name, so the title beside it
+            // stays "VoltCore" rather than reading "AR" twice.
+            ArMonogram()
+            Spacer(Modifier.width(10.dp))
+            Column {
+                Text(
+                    "VoltCore",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    statusLine(snapshot),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         Badge(snapshot.speed.label, accent)
     }

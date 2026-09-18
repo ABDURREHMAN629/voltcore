@@ -37,6 +37,8 @@ class MonitorService : LifecycleService() {
     private var lastPruneMs = 0L
     private var lastWidgetMs = 0L
     private var lastNotificationSignature: String? = null
+    private var lastLoggedLevel = -1
+    private var lastLoggedPlugged: Boolean? = null
 
     /**
      * Screen state is only observable from a running process — ACTION_SCREEN_OFF cannot
@@ -108,6 +110,15 @@ class MonitorService : LifecycleService() {
 
         notify(snapshot, settings)
         runCatching { graph.history.record(snapshot) }
+
+        // While the monitor runs it sees every whole-percent step, which pins charging curves
+        // far more tightly than the 15-minute background readings. Log only on change.
+        val plugged = snapshot.plug != com.voltcore.app.core.model.PlugType.NONE
+        if (snapshot.levelPercent != lastLoggedLevel || plugged != lastLoggedPlugged) {
+            lastLoggedLevel = snapshot.levelPercent
+            lastLoggedPlugged = plugged
+            runCatching { graph.batteryLog.record(snapshot.levelPercent, plugged, snapshot.timestampMs) }
+        }
         runCatching { graph.alerts.evaluate(snapshot, settings) }
 
         val now = System.currentTimeMillis()

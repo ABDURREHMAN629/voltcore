@@ -37,11 +37,17 @@ class FreezerState(
     /** Packages the user has ticked. Mirrors the persisted set. */
     val selected = mutableStateListOf<String>()
 
+    /** Cheap; re-run on resume so returning from Accessibility settings updates the card. */
+    suspend fun refreshPrivilege() {
+        privilege = graph.privilege.refresh()
+    }
+
     suspend fun refresh() {
         privilege = graph.privilege.refresh()
 
         val settings = graph.prefs.settings.first()
-        method = settings.freezeMethod
+        // Pause and Disable need Shizuku; without it the stored choice cannot be honoured.
+        method = if (privilege.canPause) settings.freezeMethod else FreezeMethod.FORCE_STOP
         selected.clear()
         selected.addAll(settings.frozenPackages)
 
