@@ -75,8 +75,6 @@ class PrivilegeManager(private val context: Context) {
     suspend fun activeBackend(): PrivilegedBackend? =
         if (shizuku.isAvailable()) shizuku else null
 
-    // ------------------------------------------------------------------ actions
-
     /**
      * Applies [method] to a package using the best available tier.
      *
@@ -112,7 +110,7 @@ class PrivilegeManager(private val context: Context) {
         val backend = activeBackend()
             ?: return PrivilegeResult.Unsupported("Shizuku is required to undo this.")
         return when (method) {
-            FreezeMethod.FORCE_STOP -> PrivilegeResult.Success // nothing to undo
+            FreezeMethod.FORCE_STOP -> PrivilegeResult.Success
             FreezeMethod.SUSPEND -> backend.setSuspended(packageName, false)
             FreezeMethod.DISABLE -> backend.setEnabled(packageName, true)
         }
@@ -156,8 +154,6 @@ class PrivilegeManager(private val context: Context) {
         return if (written) PrivilegeResult.Success else PrivilegeResult.Failed("Android refused.")
     }
 
-    // ------------------------------------------------------------------ detection
-
     fun canWriteSecureSettings(): Boolean =
         context.checkSelfPermission(Manifest.permission.WRITE_SECURE_SETTINGS) ==
             PackageManager.PERMISSION_GRANTED
@@ -183,8 +179,6 @@ class PrivilegeManager(private val context: Context) {
         refresh()
         return granted
     }
-
-    // ------------------------------------------------------------------ deep links
 
     /** Opens the Play listing (or the installed app) for Shizuku. */
     fun openShizuku() {

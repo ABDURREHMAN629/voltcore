@@ -20,17 +20,14 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 /** Everything the user can change, plus the calibration the app learns on its own. */
 data class VoltSettings(
-    // --- monitor ---
     val monitorEnabled: Boolean = true,
     val monitorOnlyWhileCharging: Boolean = true,
     val sampleIntervalMs: Int = 1000,
 
-    // --- display ---
     val useFahrenheit: Boolean = false,
     val dynamicColor: Boolean = false,
     val keepScreenOn: Boolean = false,
 
-    // --- alerts ---
     val alertOnFull: Boolean = true,
     val chargeLimitEnabled: Boolean = false,
     val chargeLimitPercent: Int = 80,
@@ -39,19 +36,16 @@ data class VoltSettings(
     val alertOnLowBattery: Boolean = true,
     val lowBatteryPercent: Int = 15,
 
-    // --- freezer ---
     val frozenPackages: Set<String> = emptySet(),
     val freezeMethod: FreezeMethod = FreezeMethod.SUSPEND,
     val freezeOnScreenOff: Boolean = false,
     val freezeDelayMinutes: Int = 5,
     val unfreezeOnUnlock: Boolean = true,
 
-    // --- boost ---
     val boostFreezesApps: Boolean = true,
     val boostEnablesBatterySaver: Boolean = false,
     val boostRestrictsBuckets: Boolean = true,
 
-    // --- learned, not user-facing ---
     val calibration: CalibrationState = CalibrationState(),
     val calibrationMode: CalibrationMode = CalibrationMode.AUTO,
     /** User-entered battery capacity in mAh; 0 means learn it automatically. */

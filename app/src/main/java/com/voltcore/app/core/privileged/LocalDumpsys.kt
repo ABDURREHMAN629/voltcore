@@ -42,8 +42,6 @@ class LocalDumpsys(private val context: Context) {
         withContext(Dispatchers.IO) {
             if (!isGranted()) return@withContext null
             val process = runCatching {
-                // dumpsys abandons a service after 10 s. The app parses as it reads, far slower
-                // than adb drains a pipe, so battery history was being cut off part way.
                 ProcessBuilder(listOf(DUMPSYS, "-t", TIMEOUT_SECONDS) + args)
                     .redirectErrorStream(true)
                     .start()
@@ -53,8 +51,6 @@ class LocalDumpsys(private val context: Context) {
             try {
                 BufferedReader(InputStreamReader(process.inputStream)).use { reader ->
                     val lines = reader.lineSequence()
-                    // The service reports a missing permission as ordinary output rather than
-                    // an error code, so look at the first line before trusting the rest.
                     val iterator = lines.iterator()
                     if (!iterator.hasNext()) {
                         Log.w(TAG, "dumpsys $args printed nothing")

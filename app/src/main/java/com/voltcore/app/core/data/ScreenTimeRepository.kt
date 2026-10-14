@@ -63,8 +63,6 @@ class ScreenTimeRepository(private val context: Context) {
         val usm = context.getSystemService(UsageStatsManager::class.java) ?: return@withContext null
         val start = date.atStartOfDay(zone).toInstant().toEpochMilli()
         val end = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
-        // Start a little early: if the screen was already on at midnight, the "on" event is
-        // in the previous day.
         val events = usm.queryEvents(start - LOOKBACK_MS, end) ?: return@withContext null
 
         val out = LongArray(24)
@@ -91,7 +89,6 @@ class ScreenTimeRepository(private val context: Context) {
                 }
             }
         }
-        // Still on at the end of the window (or right now, for today).
         onSince?.let { credit(it, minOf(end, System.currentTimeMillis())) }
         out
     }
@@ -154,7 +151,6 @@ internal fun foregroundMsByPackage(
             -> resumedAt.remove(pkg)?.let { credit(pkg, it, event.timeStamp) }
         }
     }
-    // Still in the foreground when the window closed.
     val cap = minOf(endMs, System.currentTimeMillis())
     for ((pkg, from) in resumedAt) credit(pkg, from, cap)
     return totals

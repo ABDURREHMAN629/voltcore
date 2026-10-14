@@ -85,8 +85,6 @@ data class LevelLogEntity(
 @Dao
 interface VoltDao {
 
-    // --- level log ---
-
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertLevels(rows: List<LevelLogEntity>)
 
@@ -105,8 +103,6 @@ interface VoltDao {
     @Query("DELETE FROM level_log WHERE timestampMs < :before")
     suspend fun pruneLevels(before: Long)
 
-    // --- samples ---
-
     @Insert
     suspend fun insertSample(sample: SampleEntity)
 
@@ -118,8 +114,6 @@ interface VoltDao {
 
     @Query("DELETE FROM samples WHERE timestampMs < :before")
     suspend fun pruneSamples(before: Long)
-
-    // --- sessions ---
 
     @Insert
     suspend fun insertSession(session: SessionEntity): Long
@@ -184,8 +178,6 @@ abstract class VoltDatabase : RoomDatabase() {
                 "voltcore.db",
             )
                 .addMigrations(MIGRATION_1_2)
-                // Still a safety net for schema changes without a migration: history is a
-                // convenience, and starting over beats refusing to open.
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
                 .also { instance = it }

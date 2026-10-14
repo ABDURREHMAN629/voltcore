@@ -39,7 +39,6 @@ class AlertManager(
     fun evaluate(snapshot: BatterySnapshot, settings: VoltSettings) {
         val charging = snapshot.status.isCharging
 
-        // --- Fully charged ---
         if (settings.alertOnFull) {
             val full = snapshot.levelPercent >= 100 ||
                 snapshot.status == com.voltcore.app.core.model.ChargeStatus.FULL
@@ -56,9 +55,6 @@ class AlertManager(
             if (!full) fullNotified = false
         }
 
-        // --- Charge limit ---
-        // Android exposes no way to actually stop charging without root, so this is an
-        // alert, not a cut-off. Saying otherwise would be a lie the hardware exposes.
         if (settings.chargeLimitEnabled) {
             val hit = snapshot.levelPercent >= settings.chargeLimitPercent
             if (hit && charging && !limitNotified) {
@@ -74,7 +70,6 @@ class AlertManager(
             if (!hit || !charging) limitNotified = false
         }
 
-        // --- Overheating ---
         if (settings.alertOnOverheat) {
             val temp = snapshot.temperatureC
             val hot = temp != null && temp >= settings.overheatThresholdC
@@ -88,14 +83,11 @@ class AlertManager(
                     urgent = true,
                 )
             }
-            // Hysteresis: only re-arm once it has genuinely cooled, or it chatters
-            // around the threshold.
             if (temp != null && temp < settings.overheatThresholdC - HEAT_HYSTERESIS_C) {
                 overheatNotified = false
             }
         }
 
-        // --- Low battery ---
         if (settings.alertOnLowBattery) {
             val low = !charging && snapshot.levelPercent <= settings.lowBatteryPercent
             if (low && !lowNotified) {
@@ -131,9 +123,6 @@ class AlertManager(
             .setContentIntent(open)
             .setAutoCancel(true)
             .setCategory(Notification.CATEGORY_STATUS)
-            // Sound is not set here on purpose: since API 26 it comes from the channel,
-            // and Builder.setSound is ignored. The alerts channel is IMPORTANCE_HIGH,
-            // which already carries the default notification sound.
             .build()
 
         runCatching { nm.notify(id, notification) }

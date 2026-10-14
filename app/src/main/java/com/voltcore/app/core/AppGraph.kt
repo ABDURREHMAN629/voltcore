@@ -42,8 +42,6 @@ class AppGraph(context: Context) {
             engine.onCalibrationChanged = { state ->
                 scope.launch { prefs.saveCalibration(state) }
             }
-            // Follow the setting rather than reading it once: a manual override chosen in
-            // Settings has to take effect on the next reading, not the next app launch.
             scope.launch {
                 prefs.settings
                     .map { it.calibrationMode }
@@ -54,9 +52,6 @@ class AppGraph(context: Context) {
                     }
             }
 
-            // The level estimator needs a capacity. Prefer the user's figure, fall back to
-            // whatever it worked out on a previous run so decimals are available straight
-            // away rather than only after the next whole-percent tick.
             engine.levelEstimator.onCapacityLearned = { mah ->
                 scope.launch { prefs.setLearnedCapacity(mah) }
             }

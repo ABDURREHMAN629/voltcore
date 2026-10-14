@@ -17,12 +17,8 @@ class VoltCoreApp : Application() {
         graph = AppGraph(this)
         createNotificationChannels()
 
-        // The day and hour views need a reading every 15 minutes whether or not the app is
-        // open. WorkManager keeps the schedule across reboots on its own.
         LevelLogWorker.schedule(this)
 
-        // One-shot dump of which battery sources this device actually permits. Availability
-        // varies enormously between OEMs and is otherwise invisible to diagnose.
         Thread { runCatching { TelemetryDiagnostics(this).log() } }.start()
     }
 
@@ -32,7 +28,6 @@ class VoltCoreApp : Application() {
         val monitor = NotificationChannel(
             CHANNEL_MONITOR,
             getString(R.string.channel_monitor_name),
-            // Low: this notification is a readout, not an interruption.
             NotificationManager.IMPORTANCE_LOW,
         ).apply {
             description = getString(R.string.channel_monitor_desc)

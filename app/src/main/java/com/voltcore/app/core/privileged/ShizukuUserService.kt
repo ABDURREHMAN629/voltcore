@@ -36,7 +36,6 @@ class ShizukuUserService : IUserService.Stub {
         val process = ProcessBuilder(*command)
             .redirectErrorStream(true)
             .start()
-        // Drain the pipe or a chatty command can block on a full buffer.
         process.inputStream.use { it.readBytes() }
         process.waitFor()
     }.getOrElse { -1 }

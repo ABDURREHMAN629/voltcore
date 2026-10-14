@@ -71,11 +71,6 @@ class CurrentCalibrator(initial: CalibrationState = CalibrationState()) {
         val before = state
         val magnitude = abs(raw)
 
-        // --- Units -------------------------------------------------------------
-        // A phone battery moves roughly 1..15000 mA. Read as microamps that is
-        // 1000..15_000_000. A reading under 1000 that the framework calls microamps
-        // would mean under 1 mA, which does not happen while current is flowing, so
-        // such a device is really reporting milliamps.
         if (magnitude >= UA_FLOOR) largeMagnitudeHits++ else smallMagnitudeHits++
 
         if (largeMagnitudeHits + smallMagnitudeHits >= SAMPLES_NEEDED) {
@@ -85,9 +80,6 @@ class CurrentCalibrator(initial: CalibrationState = CalibrationState()) {
             }
         }
 
-        // --- Sign --------------------------------------------------------------
-        // Only charging tells us the direction unambiguously: a discharging phone that
-        // is also plugged in can legitimately read either way.
         if (charging && magnitude > NOISE_FLOOR) {
             if (raw > 0) positiveWhileCharging++ else negativeWhileCharging++
 

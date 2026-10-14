@@ -56,8 +56,6 @@ class ForceStopAccessibilityService : AccessibilityService() {
         super.onDestroy()
     }
 
-    // ------------------------------------------------------------------ state machine
-
     private fun pump() {
         if (busy.get()) return
         val next = queue.poll() ?: run {
@@ -68,7 +66,6 @@ class ForceStopAccessibilityService : AccessibilityService() {
         currentPackage = next
         stage = Stage.OPENING
         openAppInfo(next)
-        // Give up on a package rather than wedging the whole queue.
         handler.postDelayed({ finish(success = false) }, PER_APP_TIMEOUT_MS)
     }
 
@@ -85,7 +82,6 @@ class ForceStopAccessibilityService : AccessibilityService() {
         val root = rootInActiveWindow ?: return
         val button = findByText(root, FORCE_STOP_LABELS) ?: return
 
-        // A greyed-out button means the app is already stopped: that counts as done.
         if (!button.isEnabled) {
             finish(success = true)
             return
@@ -111,12 +107,9 @@ class ForceStopAccessibilityService : AccessibilityService() {
         busy.set(false)
         onPackageDone?.invoke(pkg, success)
 
-        // Close Settings and move on.
         performGlobalAction(GLOBAL_ACTION_BACK)
         handler.postDelayed({ pump() }, BETWEEN_APPS_MS)
     }
-
-    // ------------------------------------------------------------------ node search
 
     /**
      * Depth-first search for a node whose text or content description matches, compared

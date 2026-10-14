@@ -70,8 +70,6 @@ fun DashboardScreen(snapshot: BatterySnapshot, settings: VoltSettings = VoltSett
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .background(
-                // A faint wash of the accent behind everything, so the whole screen
-                // shifts colour as charging speed changes.
                 Brush.verticalGradient(
                     listOf(accent.copy(alpha = if (colors.isDark) 0.13f else 0.07f), Color.Transparent),
                 ),
@@ -94,14 +92,10 @@ fun DashboardScreen(snapshot: BatterySnapshot, settings: VoltSettings = VoltSett
             ChargerCard(snapshot, accent)
             Spacer(Modifier.height(12.dp))
             HealthCard(snapshot)
-            // The nav bar floats over the content, so the scroll must be able to run
-            // past it or the last card can never be fully read.
             Spacer(Modifier.height(110.dp))
         }
     }
 }
-
-// ---------------------------------------------------------------------------- header
 
 @Composable
 private fun Header(snapshot: BatterySnapshot, accent: Color) {
@@ -111,8 +105,6 @@ private fun Header(snapshot: BatterySnapshot, accent: Color) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // The monogram carries the "AR" of the app's name, so the title beside it
-            // stays "VoltCore" rather than reading "AR" twice.
             ArMonogram()
             Spacer(Modifier.width(10.dp))
             Column {
@@ -141,8 +133,6 @@ private fun statusLine(s: BatterySnapshot): String = when (s.status) {
     ChargeStatus.UNKNOWN -> "Reading battery…"
 }
 
-// ------------------------------------------------------------------------------ ring
-
 @Composable
 private fun HeroRing(snapshot: BatterySnapshot, accent: Color) {
     val level by animateFloatAsState(
@@ -156,10 +146,6 @@ private fun HeroRing(snapshot: BatterySnapshot, accent: Color) {
     val speedFraction = ((snapshot.inputPowerW ?: snapshot.batteryPowerW ?: 0f) / 45f)
         .coerceIn(0f, 1f)
 
-    // The ring itself stays square so its centre — and therefore the readout inside it —
-    // lands where you expect. The container is deliberately shorter, because a
-    // 270-degree arc leaves its bottom quadrant empty and reserving a full square for it
-    // pushed the stat tiles a long way down the screen for nothing.
     Box(
         Modifier.fillMaxWidth().aspectRatio(1.32f),
         contentAlignment = Alignment.TopCenter,
@@ -194,8 +180,6 @@ private fun HeroRing(snapshot: BatterySnapshot, accent: Color) {
                         buildString {
                             append(Fmt.level(snapshot.levelPrecise, snapshot.levelPercent))
                             append('%')
-                            // A decimal derived by counting coulombs is an estimate, and
-                            // saying so is the difference between a readout and a claim.
                             if (snapshot.levelIsEstimated) append(" est.")
                         },
                     ).joinToString("  ·  "),
@@ -206,8 +190,6 @@ private fun HeroRing(snapshot: BatterySnapshot, accent: Color) {
         }
     }
 }
-
-// ----------------------------------------------------------------------------- stats
 
 @Composable
 private fun LiveStats(snapshot: BatterySnapshot, accent: Color, settings: VoltSettings) {
@@ -264,8 +246,6 @@ private fun LiveStats(snapshot: BatterySnapshot, accent: Color, settings: VoltSe
     }
 }
 
-// --------------------------------------------------------------------------- charger
-
 @Composable
 private fun ChargerCard(snapshot: BatterySnapshot, accent: Color) {
     if (!snapshot.status.isCharging && snapshot.chargerVoltageV == null) return
@@ -295,8 +275,6 @@ private fun ChargerCard(snapshot: BatterySnapshot, accent: Color) {
     }
 }
 
-// ---------------------------------------------------------------------------- health
-
 @Composable
 private fun HealthCard(snapshot: BatterySnapshot) {
     val colors = VoltTheme.colors
@@ -321,8 +299,6 @@ private fun HealthCard(snapshot: BatterySnapshot) {
         DetailRow("Technology", snapshot.technology)
     }
 }
-
-// ----------------------------------------------------------------------------- colour
 
 @Composable
 private fun speedColor(speed: ChargeSpeed, status: ChargeStatus): Color {

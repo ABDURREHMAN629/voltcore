@@ -78,15 +78,10 @@ class MonitorService : LifecycleService() {
                 return@launch
             }
 
-            // A hand-rolled loop rather than telemetry.stream(), because the interval has
-            // to change as the screen does.
             while (isActive) {
                 val snapshot = graph.telemetry.read()
                 onSample(snapshot)
 
-                // This single decision is most of the app's own battery cost. With the
-                // screen off nobody can read the notification, so sampling every second
-                // buys nothing and wakes the CPU 3600 times an hour.
                 val interval = if (snapshot.screenOn) {
                     settings.sampleIntervalMs.toLong()
                 } else {
@@ -100,7 +95,6 @@ class MonitorService : LifecycleService() {
     private suspend fun onSample(snapshot: BatterySnapshot) {
         val settings = this.settings
 
-        // Let go once the charger is out, if the user wants it that way.
         if (settings.monitorOnlyWhileCharging && !snapshot.status.isCharging &&
             snapshot.plug == com.voltcore.app.core.model.PlugType.NONE
         ) {
@@ -111,8 +105,6 @@ class MonitorService : LifecycleService() {
         notify(snapshot, settings)
         runCatching { graph.history.record(snapshot) }
 
-        // While the monitor runs it sees every whole-percent step, which pins charging curves
-        // far more tightly than the 15-minute background readings. Log only on change.
         val plugged = snapshot.plug != com.voltcore.app.core.model.PlugType.NONE
         if (snapshot.levelPercent != lastLoggedLevel || plugged != lastLoggedPlugged) {
             lastLoggedLevel = snapshot.levelPercent
@@ -123,9 +115,6 @@ class MonitorService : LifecycleService() {
 
         val now = System.currentTimeMillis()
 
-        // The widget has no update period of its own (updatePeriodMillis=0); it is
-        // refreshed from here while the service is alive, at a far coarser cadence than
-        // the notification so it does not cost anything noticeable.
         if (now - lastWidgetMs > WIDGET_INTERVAL_MS) {
             lastWidgetMs = now
             runCatching { VoltWidget().updateAll(this) }
@@ -212,8 +201,6 @@ class MonitorService : LifecycleService() {
             .setOnlyAlertOnce(true)
             .setShowWhen(false)
             .setCategory(Notification.CATEGORY_STATUS)
-            // Explicit cast: Action.Builder is overloaded on int and Icon, and a bare
-            // null makes the choice ambiguous.
             .addAction(
                 Notification.Action.Builder(
                     null as android.graphics.drawable.Icon?,

@@ -206,8 +206,6 @@ private fun FreezerScreen(
     }
 }
 
-// ------------------------------------------------------------------------- privilege
-
 @Composable
 private fun PrivilegeCard(
     state: PrivilegeState,
@@ -215,7 +213,6 @@ private fun PrivilegeCard(
     onOpenAccessibility: () -> Unit,
 ) {
     val colors = VoltTheme.colors
-    // Only the Shizuku rows below lead to Shizuku; everything else is the helper-free path.
     val onSetup = if (state.shizukuRunning) onSetupShizuku else onOpenAccessibility
     val (accent, title, body, action) = when {
         state.shizukuPermission -> Quad(
@@ -233,8 +230,6 @@ private fun PrivilegeCard(
             "Grant permission",
         )
 
-        // Without Shizuku, force stop through the accessibility helper is the whole story:
-        // Android keeps pausing and disabling other apps for system tools and the shell.
         state.accessibilityEnabled -> Quad(
             colors.good,
             "Force stop ready — no Shizuku needed",
@@ -291,8 +286,6 @@ private data class Quad(
     val body: String,
     val action: String?,
 )
-
-// ---------------------------------------------------------------------------- method
 
 @Composable
 private fun MethodPicker(
@@ -358,8 +351,6 @@ private fun MethodRow(
     }
 }
 
-// ---------------------------------------------------------------------------- actions
-
 @Composable
 private fun ActionBar(
     selectedCount: Int,
@@ -394,8 +385,6 @@ private fun ActionBar(
         }
     }
 }
-
-// ------------------------------------------------------------------------- list rows
 
 @Composable
 private fun AppRow(app: InstalledApp, checked: Boolean, onToggle: () -> Unit) {

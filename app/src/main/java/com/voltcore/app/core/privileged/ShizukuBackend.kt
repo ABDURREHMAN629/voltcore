@@ -37,8 +37,6 @@ class ShizukuBackend(private val context: Context) : PrivilegedBackend {
         .debuggable(false)
         .version(SERVICE_VERSION)
 
-    // ------------------------------------------------------------------ availability
-
     /** True when the Shizuku service is running, regardless of whether we may use it. */
     fun isServiceRunning(): Boolean = runCatching { Shizuku.pingBinder() }.getOrDefault(false)
 
@@ -83,8 +81,6 @@ class ShizukuBackend(private val context: Context) : PrivilegedBackend {
         }
     }
 
-    // ------------------------------------------------------------------ connection
-
     override suspend fun connect(): Boolean {
         service?.let { if (it.asBinder().isBinderAlive) return true }
         if (!isAvailable()) return false
@@ -114,15 +110,12 @@ class ShizukuBackend(private val context: Context) : PrivilegedBackend {
         }
     }
 
-    // ------------------------------------------------------------------ operations
-
     override suspend fun forceStop(packageName: String): PrivilegeResult =
         runShell("am force-stop --user 0 $packageName", packageName)
 
     override suspend fun setSuspended(packageName: String, suspended: Boolean): PrivilegeResult {
         val verb = if (suspended) "suspend" else "unsuspend"
         val result = runShell("pm $verb --user 0 $packageName", packageName)
-        // Suspending does not stop an app that is already running, so pair it with a kill.
         if (result is PrivilegeResult.Success && suspended) {
             runShell("am force-stop --user 0 $packageName", packageName)
         }
@@ -163,8 +156,6 @@ class ShizukuBackend(private val context: Context) : PrivilegedBackend {
             else -> null
         }
     }
-
-    // ------------------------------------------------------------------ plumbing
 
     private suspend fun runShell(command: String, packageName: String): PrivilegeResult {
         if (!isValidPackage(packageName)) {

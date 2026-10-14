@@ -80,7 +80,6 @@ fun SettingsRoute(graph: AppGraph) {
             )
         }
 
-        // ---------------------------------------------------------------- monitor
         item {
             GlassCard {
                 SectionLabel("Live monitor")
@@ -110,7 +109,6 @@ fun SettingsRoute(graph: AppGraph) {
             }
         }
 
-        // ---------------------------------------------------------------- alerts
         item {
             GlassCard {
                 SectionLabel("Alerts")
@@ -169,7 +167,6 @@ fun SettingsRoute(graph: AppGraph) {
             }
         }
 
-        // ---------------------------------------------------------------- automation
         item {
             GlassCard {
                 SectionLabel("Automatic freezing")
@@ -198,7 +195,6 @@ fun SettingsRoute(graph: AppGraph) {
             }
         }
 
-        // ---------------------------------------------------------------- boost
         item {
             GlassCard {
                 SectionLabel("What Boost does")
@@ -223,7 +219,6 @@ fun SettingsRoute(graph: AppGraph) {
             }
         }
 
-        // ---------------------------------------------------------------- display
         item {
             GlassCard {
                 SectionLabel("Display")
@@ -247,7 +242,6 @@ fun SettingsRoute(graph: AppGraph) {
             }
         }
 
-        // ---------------------------------------------------------------- access
         item {
             GlassCard {
                 SectionLabel("Permissions and access")
@@ -303,7 +297,6 @@ fun SettingsRoute(graph: AppGraph) {
             }
         }
 
-        // ---------------------------------------------------------------- capacity
         item {
             GlassCard {
                 SectionLabel("Battery capacity")
@@ -331,14 +324,12 @@ fun SettingsRoute(graph: AppGraph) {
                     range = 0f..8000f,
                     steps = 79,
                 ) { v ->
-                    // Snap the bottom of the range to Auto: a 100 mAh phone is not a thing.
                     val mah = v.roundToInt().let { if (it < 500) 0 else it }
                     scope.launch { prefs.setBatteryCapacity(mah) }
                 }
             }
         }
 
-        // ---------------------------------------------------------------- calibration
         item {
             GlassCard {
                 SectionLabel("Current calibration")
@@ -368,10 +359,8 @@ fun SettingsRoute(graph: AppGraph) {
             }
         }
 
-        // ---------------------------------------------------------------- diagnostics
         item { DataSourcesCard() }
 
-        // ---------------------------------------------------------------- data
         item {
             GlassCard {
                 SectionLabel("Data")
@@ -419,8 +408,6 @@ fun SettingsRoute(graph: AppGraph) {
         item { Spacer(Modifier.height(100.dp)) }
     }
 }
-
-// ----------------------------------------------------------------------- diagnostics
 
 /**
  * What this specific phone is willing to report.
@@ -495,8 +482,6 @@ private fun DataSourcesCard() {
         }
     }
 }
-
-// ------------------------------------------------------------------------ components
 
 @Composable
 private fun SettingSwitch(

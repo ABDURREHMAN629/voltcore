@@ -82,7 +82,6 @@ class ScreenStateAutomation(
     }
 
     private fun onUserBack() {
-        // Cancel a freeze that has not fired yet — the user came back before the timer.
         pendingFreeze?.cancel()
         pendingFreeze = null
 
@@ -90,7 +89,6 @@ class ScreenStateAutomation(
         scope.launch {
             val settings = prefs.settings.first()
             if (!settings.unfreezeOnUnlock) return@launch
-            // Only undo what this automation did; apps the user froze by hand stay frozen.
             for (pkg in frozenByAutomation.toList()) {
                 privilege.unfreeze(pkg, settings.freezeMethod)
             }

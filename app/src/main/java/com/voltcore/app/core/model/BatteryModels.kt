@@ -30,7 +30,7 @@ enum class PlugType(val label: String) {
             BatteryManager.BATTERY_PLUGGED_AC -> AC
             BatteryManager.BATTERY_PLUGGED_USB -> USB
             BatteryManager.BATTERY_PLUGGED_WIRELESS -> WIRELESS
-            4 /* BATTERY_PLUGGED_DOCK, hidden until API 34 */ -> DOCK
+            4  -> DOCK
             else -> NONE
         }
     }

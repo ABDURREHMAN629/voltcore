@@ -66,8 +66,6 @@ fun DailyUsageSection(
     }
 }
 
-// ---------------------------------------------------------------------------- days
-
 @Composable
 private fun DayCard(state: DailyUsageState, barColor: Color) {
     val visible = state.visibleDays
@@ -148,8 +146,6 @@ private fun DaySummary(day: DayUsage, state: DailyUsageState) {
     }
 }
 
-// --------------------------------------------------------------------------- hours
-
 @Composable
 private fun HourCard(state: DailyUsageState, day: DayUsage, usedColor: Color, chargedColor: Color) {
     GlassCard {
@@ -164,7 +160,6 @@ private fun HourCard(state: DailyUsageState, day: DayUsage, usedColor: Color, ch
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(8.dp))
-        // Two series, so a legend — and text labels, so identity never rests on colour alone.
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             LegendKey(usedColor, "Used (down)")
             LegendKey(chargedColor, "Charged (up)")
@@ -191,8 +186,6 @@ private fun HourDetail(state: DailyUsageState, hour: HourUsage) {
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.onSurface,
     )
-    // Screen time comes from Android's usage log, not the battery log, so it is shown even
-    // for an hour with no battery readings.
     if (hour.hasData) {
         DetailRow("Battery used", pctWithMah(hour.usedPct, state.capacityMah, decimals = 1))
         if (hour.chargedPct > 0f) DetailRow("Charged", "%.1f%%".format(hour.chargedPct))
@@ -210,7 +203,7 @@ private fun HourDetail(state: DailyUsageState, hour: HourUsage) {
 
     val apps = state.hourApps
     when {
-        !state.usageAccess -> Unit // explained in the access card
+        !state.usageAccess -> Unit
         apps == null -> Unit
         apps.isEmpty() -> Text(
             "No app was on screen for more than 30 seconds.",
@@ -252,8 +245,6 @@ private fun HourDetail(state: DailyUsageState, hour: HourUsage) {
     }
 }
 
-// --------------------------------------------------------------------------- month
-
 @Composable
 private fun MonthCard(state: DailyUsageState) {
     val today = LocalDate.now()
@@ -278,12 +269,9 @@ private fun MonthCard(state: DailyUsageState) {
         DetailRow("Battery used", pctWithMah(used, state.capacityMah))
         DetailRow("Full charges' worth", "%.1f".format(used / 100f))
         DetailRow("Average per day", "${perDay.roundToInt()}%")
-        // A projection, and labelled as one: Android keeps only about two weeks of history.
         DetailRow("30-day pace", "≈ %.0f full charges".format(perDay * 30 / 100f))
     }
 }
-
-// -------------------------------------------------------------------------- access
 
 @Composable
 private fun AccessCard(state: DailyUsageState, onGrantUsageAccess: () -> Unit) {
@@ -354,8 +342,6 @@ private fun CopyableCommand(command: String) {
         }
     }
 }
-
-// ------------------------------------------------------------------------- helpers
 
 @Composable
 private fun PageButton(label: String, enabled: Boolean, onClick: () -> Unit) {

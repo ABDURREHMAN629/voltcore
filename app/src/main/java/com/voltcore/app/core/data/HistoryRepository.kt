@@ -63,7 +63,6 @@ class HistoryRepository(context: Context) {
     }
 
     private suspend fun startSession(snapshot: BatterySnapshot) {
-        // Recover a session left open by a crash or a reboot rather than stacking a new one.
         dao.openSession()?.let {
             openSessionId = it.id
             sessionStartChargeMah = snapshot.chargeCounterMah

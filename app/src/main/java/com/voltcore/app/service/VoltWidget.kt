@@ -27,9 +27,6 @@ import com.voltcore.app.core.util.Fmt
 class VoltWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        // Share the app's telemetry instance rather than making a new one: the current
-        // sign and unit convention is *learned* per device, and a private instance would
-        // start uncalibrated and could show -1500 mA next to the app's +1500 mA.
         val telemetry = (context.applicationContext as? VoltCoreApp)?.graph?.telemetry
             ?: BatteryTelemetry(context)
         val snapshot = telemetry.read()

@@ -35,14 +35,12 @@ class TelemetryDiagnostics(private val context: Context) {
             context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         }.getOrNull()
 
-        // --- framework properties ---
         out += property("Capacity (%)", BatteryManager.BATTERY_PROPERTY_CAPACITY)
         out += property("Current now", BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
         out += property("Current average", BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE)
         out += property("Charge counter", BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER)
         out += property("Energy counter", BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER)
 
-        // --- sticky broadcast extras ---
         out += entry("Level", intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)?.takeIf { it >= 0 })
         out += entry("Scale", intent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1)?.takeIf { it > 0 })
         out += entry("Voltage (mV)", intent?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1)?.takeIf { it > 0 })
@@ -58,7 +56,6 @@ class TelemetryDiagnostics(private val context: Context) {
             )
         }
 
-        // --- sysfs ---
         val sysfsRoot = File("/sys/class/power_supply")
         val listed = runCatching { sysfsRoot.listFiles()?.size }.getOrNull()
         out += DiagnosticEntry(

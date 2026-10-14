@@ -46,7 +46,6 @@ class FreezerState(
         privilege = graph.privilege.refresh()
 
         val settings = graph.prefs.settings.first()
-        // Pause and Disable need Shizuku; without it the stored choice cannot be honoured.
         method = if (privilege.canPause) settings.freezeMethod else FreezeMethod.FORCE_STOP
         selected.clear()
         selected.addAll(settings.frozenPackages)
@@ -63,7 +62,6 @@ class FreezerState(
         } else {
             apps.filter { it.label.lowercase().contains(q) || it.packageName.lowercase().contains(q) }
         }
-        // Selected apps float to the top so a long list stays manageable.
         return base.sortedWith(
             compareByDescending<InstalledApp> { it.packageName in selected }
                 .thenBy { it.label.lowercase() },
@@ -141,12 +139,10 @@ class FreezerState(
         val state = graph.privilege.refresh()
         privilege = state
         when {
-            // Running but unauthorised: the prompt is the whole job.
             state.shizukuRunning && !state.shizukuPermission -> {
                 graph.privilege.requestShizukuPermission()
                 privilege = graph.privilege.refresh()
             }
-            // Installed or not, sending them to the app (or the store) is the next step.
             else -> graph.privilege.openShizuku()
         }
     }

@@ -75,12 +75,8 @@ fun HistoryRoute(graph: AppGraph) {
     val scope = rememberCoroutineScope()
     val daily = remember { DailyUsageState(graph, scope) }
 
-    // On every return to the screen, not just the first: coming back from the Usage access
-    // settings page should show the newly available screen time without a restart.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         scope.launch { daily.load() }
-        // Reading batterystats is a process round trip, so it follows resumes rather than
-        // the live sample stream.
         scope.launch { usage = graph.appUsage.report(System.currentTimeMillis() - USAGE_WINDOW_MS) }
     }
 
@@ -153,8 +149,6 @@ private fun HistoryScreen(
             SectionLabel("Last ${WINDOW_MS / 3_600_000} hours, from the live monitor")
         }
 
-        // Each measure gets its own plot. They share a time axis but not a scale, and
-        // stacking them beats a second y-axis that would invent meaning at the crossings.
         item {
             ChartCard(
                 title = "Battery current",
@@ -220,7 +214,6 @@ private fun ChartCard(
     includeZero: Boolean = false,
 ) {
     GlassCard {
-        // One series, so the title names it and no legend box is needed.
         Text(
             title,
             style = MaterialTheme.typography.titleMedium,
@@ -292,8 +285,6 @@ private fun SessionCard(session: SessionEntity) {
     }
 }
 
-// --------------------------------------------------------------------- battery usage
-
 /**
  * Which apps are costing battery.
  *
@@ -323,9 +314,6 @@ private fun BatteryUsageCard(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             when (report?.source) {
-                // Not "Measured": this phone has no charge counter, so Android models these
-                // figures rather than metering them. Green would also borrow the status
-                // palette's "good", which this is not a claim of.
                 UsageSource.BATTERY_STATS -> Badge("Android estimate", colors.normal)
                 UsageSource.USAGE_STATS -> Badge("Screen time", colors.warn)
                 else -> Unit
@@ -340,9 +328,6 @@ private fun BatteryUsageCard(
                     style = VoltText.caption,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                // Say how much of the drain the list actually explains. On phones whose
-                // power model leaves out the processor, apps can account for a small
-                // fraction of the total, and a list with no caveat reads as complete.
                 val coverage = report.coverage
                 val drain = report.drainMah
                 if (coverage != null && drain != null && coverage < COVERAGE_NOTE_BELOW) {
@@ -427,7 +412,6 @@ private fun UsageRow(entry: AppPowerUse, peak: Double) {
         if (entry.packageName != null) {
             AppIcon(entry.packageName, entry.label, size = 30.dp)
         } else {
-            // Hardware buckets have no icon; a coloured chip keeps the rows aligned.
             Box(
                 Modifier
                     .size(30.dp)
@@ -451,15 +435,12 @@ private fun UsageRow(entry: AppPowerUse, peak: Double) {
                     modifier = Modifier.weight(1f, fill = false),
                 )
                 Spacer(Modifier.width(8.dp))
-                // Values wear text colour; the bar beside them carries the identity.
                 Text(
                     entry.displayValue(),
                     style = VoltText.readoutSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
             }
-            // The off-screen share is the actionable part: an app that burns most of its
-            // battery while you are not looking at it is the one worth freezing.
             entry.offScreenShare?.let { share ->
                 val pct = (share * 100).roundToInt()
                 Text(
@@ -473,8 +454,6 @@ private fun UsageRow(entry: AppPowerUse, peak: Double) {
                 )
             }
             Spacer(Modifier.height(4.dp))
-            // Proportional bar rather than a number alone: relative cost is the thing
-            // you actually want to see in a ranked list.
             Box(
                 Modifier
                     .fillMaxWidth()

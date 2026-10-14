@@ -103,8 +103,6 @@ class BoostEngine(
             message = "Checking what changed…",
         )
 
-        // Let the system settle before re-measuring, or the reading captures the cost of
-        // the freeze itself rather than the benefit.
         delay(SETTLE_MS)
 
         val after = sampleCurrent(VERIFY_SAMPLES) { done ->
@@ -133,13 +131,10 @@ class BoostEngine(
         _state.value = BoostState()
     }
 
-    // ------------------------------------------------------------------ actions
-
     private suspend fun applyActions(settings: VoltSettings): List<BoostAction> {
         val actions = mutableListOf<BoostAction>()
         val backend = privilege.activeBackend()
 
-        // 1. Stop the apps the user picked.
         if (settings.boostFreezesApps) {
             val targets = settings.frozenPackages.toList()
             when {
@@ -151,7 +146,6 @@ class BoostEngine(
                 )
 
                 else -> {
-                    // Without Shizuku only force stop exists, whatever the stored choice.
                     val method = if (backend != null) settings.freezeMethod else FreezeMethod.FORCE_STOP
                     var frozen = 0
                     for (pkg in targets) {
@@ -178,8 +172,6 @@ class BoostEngine(
             }
         }
 
-        // 2. Push those apps into the most restrictive standby bucket so the system
-        //    stops handing them jobs and alarms while charging.
         if (settings.boostRestrictsBuckets) {
             if (backend == null) {
                 actions += BoostAction(
@@ -201,8 +193,6 @@ class BoostEngine(
             }
         }
 
-        // 3. Battery saver, if the user opted in. Off by default because it also throttles
-        //    the foreground, which people notice and blame on the phone.
         if (settings.boostEnablesBatterySaver) {
             val result = privilege.putGlobalSetting("low_power", "1")
             actions += BoostAction(
@@ -219,8 +209,6 @@ class BoostEngine(
 
         return actions
     }
-
-    // ------------------------------------------------------------------ measurement
 
     /**
      * Mean charging current over a short window, ignoring the first reading because it is

@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
 
     private val requestNotifications =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* advisory */ }
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {  }
 
     /** Set from the launching intent; the Quick Settings tile uses it to jump to Boost. */
     private var launchTab by mutableStateOf(VoltTab.POWER)
@@ -42,8 +42,6 @@ class MainActivity : ComponentActivity() {
         val graph = (application as VoltCoreApp).graph
         applyLaunchIntent(intent)
 
-        // The live readout is a notification, so without this permission the app's main
-        // background feature silently does nothing.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
@@ -58,8 +56,6 @@ class MainActivity : ComponentActivity() {
             val settings by graph.prefs.settings
                 .collectAsStateWithLifecycle(initialValue = VoltSettings())
 
-            // Handled here rather than per screen: it is a property of the window, and
-            // scoping it to the activity guarantees the flag is released.
             DisposableEffect(settings.keepScreenOn) {
                 if (settings.keepScreenOn) {
                     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)

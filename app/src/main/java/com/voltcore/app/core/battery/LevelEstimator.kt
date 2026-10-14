@@ -81,20 +81,17 @@ class LevelEstimator(capacityMah: Float? = null) {
             return null
         }
 
-        // --- integrate charge since the previous sample ---
         val previous = lastSampleMs
         lastSampleMs = timestampMs
         if (previous > 0L) {
             val dtMs = (timestampMs - previous).coerceAtMost(MAX_GAP_MS)
             if (dtMs > 0L) {
-                // mA * hours = mAh
                 accumulatedMah += currentMa * (dtMs / 3_600_000f)
             }
         }
 
         val anchor = anchorLevel
         if (anchor == null) {
-            // First reading: we do not know where inside the percent we are.
             anchorLevel = levelPercent
             anchorTrue = levelPercent.toFloat()
             accumulatedMah = 0f
@@ -102,25 +99,19 @@ class LevelEstimator(capacityMah: Float? = null) {
             return null
         }
 
-        // --- a whole-percent tick: learn, then re-anchor ---
         if (levelPercent != anchor) {
             val step = levelPercent - anchor
             if (abs(step) == 1 && direction != 0 && sign(step.toFloat()).toInt() == direction) {
                 learnCapacity(abs(accumulatedMah))
             }
             direction = if (step > 0) 1 else -1
-            // The gauge rounds, so a reported N spans [N-0.5, N+0.5). Landing on N while
-            // rising means we just crossed N-0.5; while falling, N+0.5.
             anchorTrue = levelPercent - direction * 0.5f
             anchorLevel = levelPercent
             accumulatedMah = 0f
             return anchorTrue.coerceIn(levelPercent - 0.5f, levelPercent + 0.499f)
         }
 
-        // Direction is only known after the first tick; before that we cannot place
-        // ourselves within the band and should stay quiet.
         if (direction == 0) {
-            // Still infer a direction from current flow so the first tick can teach us.
             direction = if (currentMa > 0f) 1 else -1
             return null
         }
@@ -132,7 +123,6 @@ class LevelEstimator(capacityMah: Float? = null) {
         val movedPercent = accumulatedMah / perPercentMah
 
         val estimate = anchorTrue + movedPercent
-        // Never contradict the integer the framework reported.
         return estimate.coerceIn(anchor - 0.5f, anchor + 0.499f).coerceIn(0f, 100f)
     }
 

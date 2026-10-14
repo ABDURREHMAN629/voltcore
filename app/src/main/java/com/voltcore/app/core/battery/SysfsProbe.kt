@@ -69,8 +69,6 @@ class SysfsProbe {
         }
     }
 
-    // ------------------------------------------------------------------ battery side
-
     /** Raw, uncalibrated current. Units and sign are device-specific — see CurrentCalibrator. */
     fun rawBatteryCurrent(): Long? = guarded { batteryDir?.let { firstLong(it, CURRENT_KEYS) } }
 
@@ -90,7 +88,6 @@ class SysfsProbe {
         if (!isAvailable) return null
         val dir = batteryDir ?: return null
         firstLong(dir, listOf("charge_full_design"))?.let { return chargeToMah(it) }
-        // Some gauges only report energy; convert using the nominal cell voltage.
         val energyUwh = firstLong(dir, listOf("energy_full_design")) ?: return null
         val nominalV = firstLong(dir, listOf("voltage_max_design", "constant_charge_voltage_max"))
             ?.let { scaleToBase(it) } ?: NOMINAL_CELL_V
@@ -130,8 +127,6 @@ class SysfsProbe {
         batteryDir?.let { firstLong(it, listOf("temp", "batt_temp", "temperature")) }
             ?.let { raw -> if (abs(raw) > 1000) raw / 100f else raw / 10f }
     }
-
-    // ------------------------------------------------------------------ charger side
 
     /** Charger output voltage, volts. 5 / 9 / 12 / 15 / 20 V reveal the PD profile. */
     fun chargerVoltageV(): Float? {
@@ -206,8 +201,6 @@ class SysfsProbe {
 
     private fun isOnline(dir: File): Boolean = readLong(dir, "online") != 0L
 
-    // ------------------------------------------------------------------ io helpers
-
     /**
      * Runs a reader only when sysfs is known to work. On a device that denies it, every
      * call collapses to a boolean test instead of a burst of failing file opens.
@@ -244,8 +237,8 @@ class SysfsProbe {
     private fun chargeToMah(raw: Long): Float? {
         val a = abs(raw)
         return when {
-            a > 100_000L -> raw / 1_000f  // microamp-hours
-            a > 100L -> raw.toFloat()     // already milliamp-hours
+            a > 100_000L -> raw / 1_000f
+            a > 100L -> raw.toFloat()
             else -> null
         }
     }

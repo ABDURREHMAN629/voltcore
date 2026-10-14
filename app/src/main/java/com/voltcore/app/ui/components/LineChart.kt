@@ -70,7 +70,6 @@ fun LineChart(
     val rawMax = points.maxOf { it.y }
     val lo = if (includeZero) minOf(rawMin, 0f) else rawMin
     val hi = if (includeZero) maxOf(rawMax, 0f) else rawMax
-    // Pad so the line never touches the frame, and never divide by zero on a flat series.
     val pad = ((hi - lo) * 0.12f).takeIf { it > 0.0001f } ?: (abs(hi).coerceAtLeast(1f) * 0.2f)
     val yMin = lo - pad
     val yMax = hi + pad
@@ -106,8 +105,6 @@ fun LineChart(
                     }
                 },
         ) {
-            // --- Baseline. Only drawn when the data actually crosses zero, where it
-            // separates charging from discharging and therefore means something.
             if (yMin < 0f && yMax > 0f) {
                 val zeroY = h - ((0f - yMin) / spanY) * h
                 drawLine(
@@ -147,7 +144,6 @@ fun LineChart(
                 style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round),
             )
 
-            // --- Crosshair while the user is inspecting.
             selected?.let { idx ->
                 val o = px(points[idx])
                 drawLine(
@@ -156,13 +152,11 @@ fun LineChart(
                     end = Offset(o.x, h),
                     strokeWidth = 1.dp.toPx(),
                 )
-                // Ring the marker in the surface colour so it stays legible on the fill.
                 drawCircle(color = Color.Black.copy(alpha = 0.55f), radius = 6.dp.toPx(), center = o)
                 drawCircle(color = accent, radius = 4.dp.toPx(), center = o)
             }
         }
 
-        // --- Selective direct labels: the extremes, plus the inspected value.
         val idx = selected
         if (idx != null) {
             Text(

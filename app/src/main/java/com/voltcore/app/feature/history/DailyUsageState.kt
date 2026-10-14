@@ -69,8 +69,6 @@ class DailyUsageState(
         capacityMah = resolveCapacity()
         coverage = graph.batteryLog.coverage()
 
-        // Show what is already stored straight away, then import Android's history if it is
-        // permitted and refresh — the import can take a few seconds.
         reloadDays()
         loading = false
 
@@ -100,7 +98,6 @@ class DailyUsageState(
     fun selectDate(date: LocalDate, hour: Int? = null) {
         selectedDate = date
         val day = days.firstOrNull { it.date == date }
-        // Default to the current hour for today, otherwise the day's heaviest hour.
         selectedHour = hour
             ?: LocalTime.now().hour.takeIf { date == LocalDate.now() }
             ?: day?.hours?.maxByOrNull { it.usedPct }?.takeIf { it.usedPct > 0f }?.hour
@@ -137,8 +134,6 @@ class DailyUsageState(
     /** User's figure, then the learned one, then the factory rating read from the phone. */
     private suspend fun resolveCapacity(): Float? {
         graph.telemetry.levelEstimator.capacityMah?.let { return it }
-        // A reading seeds the estimator with the factory capacity. It does file and binder
-        // I/O, so it must not run on the main thread this is called from.
         withContext(Dispatchers.IO) { runCatching { graph.telemetry.read() } }
         return graph.telemetry.levelEstimator.capacityMah
     }

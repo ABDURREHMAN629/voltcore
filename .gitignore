@@ -18,3 +18,13 @@ dist/
 
 # Local build output
 build.log
+
+# AI editor and assistant folders: local only, never uploaded
+.claude/
+.kiro/
+.cursor/
+.windsurf/
+.aider*
+.github/copilot-instructions.md
+CLAUDE.md
+.mcp.json

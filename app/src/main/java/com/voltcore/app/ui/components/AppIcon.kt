@@ -81,7 +81,6 @@ fun AppIcon(
 private object IconCache {
     private const val ICON_PX = 128
 
-    // Roughly 64 KB per ARGB_8888 icon at this size; 150 entries is about 10 MB.
     private val cache = LruCache<String, ImageBitmap>(150)
 
     fun peek(packageName: String): ImageBitmap? = cache.get(packageName)

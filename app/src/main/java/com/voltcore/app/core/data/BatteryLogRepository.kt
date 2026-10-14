@@ -81,8 +81,6 @@ class BatteryLogRepository(
         get() = state.getLong(KEY_LAST_IMPORT, 0L)
         set(value) = state.edit().putLong(KEY_LAST_IMPORT, value).apply()
 
-    // ------------------------------------------------------------------ recording
-
     /** Logs the level right now. Cheap: reads the sticky broadcast, writes one row. */
     suspend fun recordNow() = withContext(Dispatchers.IO) {
         val intent = runCatching {
@@ -99,8 +97,6 @@ class BatteryLogRepository(
 
     /** Logs a level already in hand, e.g. from the live monitor. */
     suspend fun record(level: Int, plugged: Boolean, atMs: Long = System.currentTimeMillis()) {
-        // The monitor, the worker and the History screen all log; drop an unchanged reading
-        // that lands soon after the last one. Periodic repeats still bridge long idle gaps.
         val last = dao.lastLevel()
         if (last != null && last.level == level && last.plugged == plugged &&
             atMs - last.timestampMs in 0 until REPEAT_MIN_INTERVAL_MS
@@ -117,8 +113,6 @@ class BatteryLogRepository(
             ),
         )
     }
-
-    // ------------------------------------------------------------------ Android history
 
     /**
      * Imports Android's battery history if `DUMP` has been granted.
@@ -137,7 +131,6 @@ class BatteryLogRepository(
             val rows = dumpsys.stream(listOf("batterystats", "--history")) { lines ->
                 parseHistory(lines, now)
             } ?: return@withLock null
-            // Only a dump that actually ran counts, so a refusal is retried next time.
             lastImportAttemptMs = now
             Log.i(TAG, "Imported ${rows.size} history rows")
 
@@ -173,7 +166,7 @@ class BatteryLogRepository(
             if (SCREEN_OFF.containsMatchIn(rest)) screen = false
 
             val level = lvl.toInt()
-            val p = plugged ?: continue // state unknown until the first status line
+            val p = plugged ?: continue
             if (level == lastLevel && p == lastPlugged && screen == lastScreen) continue
 
             val t = runCatching {
@@ -193,8 +186,6 @@ class BatteryLogRepository(
         return out
     }
 
-    // ------------------------------------------------------------------ reading
-
     suspend fun coverage(): LogCoverage = withContext(Dispatchers.IO) {
         LogCoverage(
             firstMs = dao.firstLevelTimestamp(),
@@ -209,7 +200,6 @@ class BatteryLogRepository(
             val first = today.minusDays((days - 1).toLong())
             val from = first.atStartOfDay(zone).toInstant().toEpochMilli()
             val to = today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
-            // One reading from before the window, so its first hour has a starting level.
             val rows = dao.levelsBetween(from - MAX_GAP_MS, to)
             val buckets = bucketByHour(rows, from, to)
             (0 until days).map { i ->

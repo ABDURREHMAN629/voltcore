@@ -1,13 +1,65 @@
-# AR VoltCore
+# AR VoltCore — Android Battery Monitor & Ampere Charging Meter (Free APK, No Root)
 
-A battery and charging monitor for Android that shows what your charger is *actually*
-delivering — amps, volts, watts, temperature, and the negotiated USB PD / Quick Charge
-profile — plus tools to stop background apps from eating into it.
+[![Download APK](https://img.shields.io/github/v/release/ABDURREHMAN629/voltcore?label=Download%20APK&style=for-the-badge)](https://github.com/ABDURREHMAN629/voltcore/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/ABDURREHMAN629/voltcore/total?style=for-the-badge)](https://github.com/ABDURREHMAN629/voltcore/releases)
+[![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](#installing-the-apk)
+[![Kotlin](https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](#architecture)
 
-**No root required.** Nothing here asks you to unlock a bootloader or modify the system
-partition, so Play Integrity stays intact and banking apps keep working.
+**AR VoltCore is a free, open-source battery monitor and charging meter for Android.** It
+shows real charging speed in **amperes (mA), watts and volts**, battery temperature and
+health, **per-app battery usage**, and a **day-by-day and hour-by-hour battery history**
+drawn as charts — so you can see exactly where your battery went.
 
----
+It is an **ampere meter**, a **charging speed test**, a **battery drain analyzer** and a
+**background app freezer** in one app, for phones running **Android 8.0 through Android 17**.
+
+**No root. No ads. No trackers. No internet permission** — nothing it reads ever leaves the
+phone. Your bootloader stays locked, Play Integrity stays intact, and banking apps keep
+working.
+
+## Download the APK
+
+**[⬇ Download the latest AR VoltCore APK](https://github.com/ABDURREHMAN629/voltcore/releases/latest)**
+— free, no sign-up, built from the source in this repository.
+
+### Installing the APK
+
+1. Download `VoltCore.apk` from the [latest release](https://github.com/ABDURREHMAN629/voltcore/releases/latest).
+2. Open it on your phone and allow installing from this source when Android asks.
+3. Open **AR VoltCore** and plug in a charger — the live readout starts immediately.
+
+Nothing else is required to use the app. Two optional one-time USB commands unlock the full
+battery history and per-app figures; see [Setup without Shizuku](#setup-without-shizuku-recommended).
+
+## Features
+
+- **Live charging meter** — charging current in mA, charging power in watts, battery voltage
+  and temperature, updated about once a second while plugged in.
+- **Charging speed test** — tells you whether the charger is running slow, normal or fast,
+  and shows the USB PD / Quick Charge profile the phone negotiated.
+- **Battery percentage with decimals** — 78.1% instead of a flat 78%, so a slow drain is
+  visible long before the whole point ticks over.
+- **Battery history by day and by hour** — bar charts of how much battery each day used and
+  charged, tap any day, then tap any hour to see what happened in it. Older dates included.
+- **Per-app battery usage** — which apps drained the battery, system apps included, taken
+  from Android's own battery accounting.
+- **Battery health and capacity** — estimated full-charge capacity against the factory
+  rating, plus cycle count where the phone exposes it.
+- **Boost** — stops the background apps you pick, then measures the charging current before
+  and after so the gain is a real measurement rather than an animation.
+- **App freezer** — force stop the apps you choose, or pause and disable them if you add the
+  optional Shizuku helper.
+- **Charge alarm and alerts** — full charge, custom charge limit (e.g. stop at 80%),
+  overheating and low battery.
+- **Home screen widget and quick settings tile** — charge level and current at a glance.
+- **Material 3 interface** with light and dark themes, built in Jetpack Compose.
+
+## Who it is for
+
+Anyone who wants to know whether a charger, cable or power bank is actually fast; whether a
+battery is ageing; which app is draining the phone overnight; or how much battery a
+particular hour of the day costs. If you have used apps like Ampere, AccuBattery, Ampere
+Flow, Electron or Fast Charge, this covers the same ground as a single open-source app.
 
 ## Building
 
@@ -239,6 +291,51 @@ status is rendered with its text label, so colour is never the only channel.
 
 ---
 
+## FAQ
+
+### Is AR VoltCore free?
+
+Yes. It is free and open source, with no ads, no in-app purchases and no accounts.
+
+### Does it need root?
+
+No. Nothing in the app needs root, an unlocked bootloader or a modified system partition.
+
+### Which Android versions are supported?
+
+Android 8.0 (API 26) through Android 17 (API 37), phones and tablets.
+
+### Why does my phone show no charger voltage or cycle count?
+
+Those come from kernel files some manufacturers keep private — Xiaomi/HyperOS is one. Where
+a value is unavailable the app shows a dash instead of inventing one. **Settings → Device
+data sources** lists exactly what your phone allows.
+
+### Can an app make charging faster?
+
+Not by raising the charger's output: the current is negotiated between the charger and the
+phone's charging driver, and no Android app can override it. What an app can do is lower the
+phone's own consumption so more of that power reaches the battery, which is what Boost does
+— and it reports the measured difference, including when there is none.
+
+### Can it stop charging at 80%?
+
+It can alarm at any level you set, but no Android app can cut the charger off. Phones that
+offer a real charge limit do it in the system settings.
+
+### Is my data sent anywhere?
+
+No. The app has no internet permission at all, so readings and app names cannot leave the
+phone.
+
+### Why does it need the Usage access and DUMP permissions?
+
+Only to read what Android already records about battery history and app usage. Both are
+optional, granted by you over USB, and the app works without them — see
+[Setup without Shizuku](#setup-without-shizuku-recommended).
+
+---
+
 ## Permissions, and why each is needed
 
 | Permission | Why |
@@ -253,3 +350,11 @@ status is rendered with its text label, so colour is never the only channel.
 | `WRITE_SETTINGS` | Boost toggling system settings (optional) |
 
 VoltCore has no network permission. Nothing it reads leaves the device.
+
+---
+
+**Keywords:** android battery monitor app, ampere meter android, charging current mA tester,
+watt meter charging, battery health checker, battery usage by app, battery drain analyzer,
+hourly battery usage history, fast charging test, USB PD Quick Charge detector, battery
+saver, background app freezer, no root battery app, open source android battery app, free
+battery monitor APK download.

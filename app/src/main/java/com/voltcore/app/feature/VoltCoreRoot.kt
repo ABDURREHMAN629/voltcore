@@ -77,8 +77,6 @@ fun VoltCoreRoot(
 ) {
     var tab by rememberSaveable { mutableStateOf(initialTab) }
 
-    // rememberSaveable only seeds from initialTab once, so a later intent needs its own
-    // signal to move the selection.
     LaunchedEffect(navRequest) {
         if (navRequest > 0) tab = initialTab
     }
@@ -115,9 +113,6 @@ private fun VoltBottomBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            // A gradient scrim rather than a solid bar, so content scrolls away under it
-            // instead of stopping at a hard edge. The gradient fades to the background
-            // colour, so the strip behind the system gesture bar stays fully opaque.
             .background(
                 Brush.verticalGradient(
                     listOf(

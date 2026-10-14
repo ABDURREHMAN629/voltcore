@@ -79,7 +79,6 @@ fun DayBarChart(
                 val h = (day.usedPct / peak) * plotH
                 roundedBar(cx - barW / 2, baseline - h, barW, h, roundTop = true, color = barColor.copy(alpha = if (dim) 0.45f else 1f))
             }
-            // Day-of-month, with the weekday initial beneath it.
             drawLabel(measurer, day.date.dayOfMonth.toString(), cx, baseline + 4.dp.toPx(), if (isSel) ink else muted, 11)
             drawLabel(
                 measurer,
@@ -129,13 +128,11 @@ fun HourBarChart(
         if (hours.isEmpty()) return@Canvas
         val labelH = 18.dp.toPx()
         val plotH = size.height - labelH
-        // Drain is what people come here for, so it gets the larger share of the height.
         val baseline = plotH * UP_SHARE
         val upH = baseline - 14.dp.toPx()
         val downH = plotH - baseline - 14.dp.toPx()
         val maxUsed = hours.maxOf { it.usedPct }
         val maxCharged = hours.maxOf { it.chargedPct }
-        // One scale for both directions: whichever side is tighter sets it.
         val perPoint = minOf(
             upH / maxCharged.coerceAtLeast(MIN_HOUR_SCALE),
             downH / maxUsed.coerceAtLeast(MIN_HOUR_SCALE),
@@ -166,7 +163,6 @@ fun HourBarChart(
             }
         }
 
-        // Hour ticks every six hours, plus the selected hour.
         for (h in listOf(0, 6, 12, 18)) {
             drawLabel(measurer, "%02d".format(h), slot * h + slot / 2, plotH + 3.dp.toPx(), muted, 10)
         }

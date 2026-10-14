@@ -33,7 +33,6 @@ class BoostTileService : TileService() {
             .putExtra(MainActivity.EXTRA_AUTO_BOOST, true)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            // Android 14 replaced the Intent overload with a PendingIntent one.
             val pending = PendingIntent.getActivity(
                 this,
                 0,

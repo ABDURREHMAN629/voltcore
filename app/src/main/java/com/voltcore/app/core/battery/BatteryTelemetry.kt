@@ -53,7 +53,6 @@ class BatteryTelemetry(
     /** Fired when a calibrator learns something worth persisting. */
     var onCalibrationChanged: ((CalibrationState) -> Unit)? = null
 
-    // Capacity is a device constant; probing it costs file IO, so cache it.
     private val designCapacity: Float? by lazy {
         sysfs.designCapacityMah() ?: powerProfileCapacityMah()
     }
@@ -79,21 +78,12 @@ class BatteryTelemetry(
         val currentMa = readCurrentMa(charging)
         val chargeCounter = readChargeCounterMah()
 
-        // Present full-charge capacity, which degrades with age. Stays null when the
-        // device will not report it — substituting the design figure here would make
-        // health read a flat 100% forever.
         val measuredFullCapacity = sysfs.fullCapacityMah()
 
-        // For sizing the battery, the factory rating is a fine stand-in.
         val capacityForEstimate = measuredFullCapacity ?: designCapacity
 
-        // Seed the estimator with it. Without this it cannot say anything until it has
-        // watched a whole percent tick by, which can be twenty minutes; with it, decimals
-        // are available immediately and the learned figure refines the seed later.
         capacityForEstimate?.let { levelEstimator.seedCapacity(it) }
 
-        // Prefer a real fractional figure. Fall back to coulomb counting only when the
-        // device gives us nothing better, and flag it so the UI can say which it is.
         val measuredLevel = preciseLevel(intent, chargeCounter, measuredFullCapacity, level)
         val estimatedLevel = if (measuredLevel == null) {
             levelEstimator.observe(level, currentMa, now)
@@ -122,8 +112,6 @@ class BatteryTelemetry(
                 ?: sysfs.batteryVoltageV(),
             currentMa = currentMa,
             avgCurrentMa = readAverageCurrentMa(),
-            // Reuse the values computed above rather than re-reading them: each of these
-            // is a binder call or a file open, and this runs once a second.
             chargeCounterMah = chargeCounter,
             fullCapacityMah = measuredFullCapacity,
             designCapacityMah = designCapacity,
@@ -159,8 +147,6 @@ class BatteryTelemetry(
         return raw.takeIf { it > 0L }
     }
 
-    // ------------------------------------------------------------------ current
-
     private fun readCurrentMa(charging: Boolean): Float? {
         frameworkRawCurrent()?.let { raw ->
             if (frameworkCalibrator.observe(raw, charging)) {
@@ -192,8 +178,6 @@ class BatteryTelemetry(
         val bm = batteryManager ?: return null
         val value = runCatching { bm.getLongProperty(id) }.getOrNull() ?: return null
         if (value == Long.MIN_VALUE || value == Int.MIN_VALUE.toLong()) return null
-        // A property that is genuinely unsupported tends to peg at 0 forever. Zero is a
-        // legitimate current though, so only reject it when it is also the int sentinel.
         val asInt = runCatching { bm.getIntProperty(id) }.getOrNull()
         if (value == 0L && (asInt == null || asInt == Int.MIN_VALUE)) return null
         return value
@@ -220,8 +204,6 @@ class BatteryTelemetry(
     ): Float? {
         if (chargeCounterMah != null && fullCapacityMah != null && fullCapacityMah > 0f) {
             val pct = chargeCounterMah / fullCapacityMah * 100f
-            // Guard against a stale or mismatched capacity making this nonsense: it must
-            // agree with the integer the framework reports.
             if (pct in 0f..100.5f && kotlin.math.abs(pct - fallbackLevel) <= 2f) {
                 return pct.coerceIn(0f, 100f)
             }
@@ -236,7 +218,6 @@ class BatteryTelemetry(
 
     private fun readChargeCounterMah(): Float? {
         frameworkProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER)?.let { raw ->
-            // Documented as microamp-hours.
             val mah = if (kotlin.math.abs(raw) > 100_000L) raw / 1000f else raw.toFloat()
             if (mah > 0f) return mah
         }
@@ -252,12 +233,9 @@ class BatteryTelemetry(
         return sysfs.cycleCount()
     }
 
-    // ------------------------------------------------------------------ misc
-
     private fun resolveProtocol(plug: PlugType): ChargeProtocol {
         val fromKernel = sysfs.chargeProtocol()
         if (fromKernel != ChargeProtocol.UNKNOWN) return fromKernel
-        // Fall back to what the plug type implies.
         return when (plug) {
             PlugType.WIRELESS -> ChargeProtocol.WIRELESS
             PlugType.AC -> ChargeProtocol.DCP

@@ -67,8 +67,6 @@ fun BoostRoute(graph: AppGraph, autoStart: Boolean = false) {
     val engine = remember { graph.boost }
     val state by engine.state.collectAsStateWithLifecycle()
 
-    // Launched from the Quick Settings tile: run once on arrival rather than making the
-    // user press the button they already pressed.
     LaunchedEffect(autoStart) {
         if (autoStart && state.phase == BoostPhase.IDLE) engine.boost()
     }
@@ -170,8 +168,6 @@ private fun BoostScreen(
     }
 }
 
-// ------------------------------------------------------------------------------ dial
-
 @Composable
 private fun BoostDial(state: BoostState, running: Boolean) {
     val colors = VoltTheme.colors
@@ -201,7 +197,6 @@ private fun BoostDial(state: BoostState, running: Boolean) {
             val cy = size.height / 2f
             val radius = size.minDimension / 2.6f
 
-            // Ambient glow.
             drawCircle(
                 brush = Brush.radialGradient(
                     listOf(accent.copy(alpha = 0.18f), Color.Transparent),
@@ -212,7 +207,6 @@ private fun BoostDial(state: BoostState, running: Boolean) {
                 center = Offset(cx, cy),
             )
 
-            // Track + progress.
             drawCircle(
                 color = Color.White.copy(alpha = 0.07f),
                 radius = radius,
@@ -229,8 +223,6 @@ private fun BoostDial(state: BoostState, running: Boolean) {
                 style = Stroke(width = 14f, cap = StrokeCap.Round),
             )
 
-            // A travelling wave inside the dial while work is happening: it encodes
-            // that current is being sampled rather than just spinning for effect.
             if (running) {
                 val points = 44
                 var previous: Offset? = null
@@ -274,8 +266,6 @@ private fun BoostDial(state: BoostState, running: Boolean) {
         }
     }
 }
-
-// --------------------------------------------------------------------------- results
 
 @Composable
 private fun ResultCard(state: BoostState) {

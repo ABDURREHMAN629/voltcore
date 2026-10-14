@@ -60,10 +60,6 @@ fun ChargeRing(
             val g = ringGeometry(strokeWidth)
             val sweep = 270f * level.coerceIn(0f, 1f)
 
-            // Static bloom. This used to breathe, which meant allocating a radial
-            // gradient shader on every frame — measured at roughly half a CPU core on
-            // device. A gradient is expensive to build and cheap to keep, so it is drawn
-            // here, once per state change, rather than inside the animation.
             if (animate) {
                 drawCircle(
                     brush = Brush.radialGradient(
@@ -87,7 +83,6 @@ fun ChargeRing(
             )
 
             if (sweep > 0.5f) {
-                // Glow pass: a wide, faint copy of the arc underneath the crisp one.
                 drawArc(
                     color = accent.copy(alpha = 0.22f),
                     startAngle = START_ANGLE,
@@ -152,7 +147,6 @@ private fun RingMotion(
 ) {
     val transition = rememberInfiniteTransition(label = "ring")
 
-    // One full orbit takes between 3.2s (trickle) and 0.9s (ultra).
     val orbitDurationMs = (3200 - (chargeSpeedFraction.coerceIn(0f, 1f) * 2300)).toInt()
     val orbit by transition.animateFloat(
         initialValue = 0f,
@@ -171,8 +165,6 @@ private fun RingMotion(
         Modifier
             .fillMaxSize()
             .graphicsLayer {
-                // Begin a tail-length in, so the tail never trails off the start of the
-                // arc into the ring's open bottom quadrant.
                 rotationZ = START_ANGLE + TAIL_SPAN_DEG +
                     orbit * (sweep - TAIL_SPAN_DEG)
                 transformOrigin = TransformOrigin.Center

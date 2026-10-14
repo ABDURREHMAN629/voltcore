@@ -106,8 +106,6 @@ class AppUsageRepository(
             usageStatsReport(sinceMs, untilMs)
         }
 
-    // ------------------------------------------------------------- Android's estimate
-
     /**
      * Reads `dumpsys batterystats --usage`.
      *
@@ -191,7 +189,6 @@ class AppUsageRepository(
                 continue
             }
             if (inGlobal) {
-                // The global totals end where the per-state breakdowns or app rows begin.
                 if (line.startsWith("(") || line.startsWith("UID ")) {
                     inGlobal = false
                 } else {
@@ -263,8 +260,6 @@ class AppUsageRepository(
         else -> "UID $uid"
     }
 
-    // ------------------------------------------------------------- screen-time proxy
-
     private fun usageStatsReport(sinceMs: Long, untilMs: Long): UsageReport {
         val usm = context.getSystemService(UsageStatsManager::class.java)
             ?: return UsageReport(UsageSource.NONE, emptyList())
@@ -291,8 +286,6 @@ class AppUsageRepository(
 
         return UsageReport(UsageSource.USAGE_STATS, entries)
     }
-
-    // ------------------------------------------------------------------ helpers
 
     private fun labelOf(packageName: String): String = runCatching {
         pm.getApplicationLabel(pm.getApplicationInfo(packageName, 0)).toString()
