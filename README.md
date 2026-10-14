@@ -24,7 +24,7 @@ working.
 
 ### Installing the APK
 
-1. Download `VoltCore.apk` from the [latest release](https://github.com/ABDURREHMAN629/voltcore/releases/latest).
+1. Download the `AR-VoltCore-<version>.apk` file from the [latest release](https://github.com/ABDURREHMAN629/voltcore/releases/latest).
 2. Open it on your phone and allow installing from this source when Android asks.
 3. Open **AR VoltCore** and plug in a charger — the live readout starts immediately.
 
